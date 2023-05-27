@@ -1,0 +1,4 @@
+token: "testtoken"
+services:
+ loms: "http://loms:8081"
+ productservice: "http://route256.pavl.uk:8080"
