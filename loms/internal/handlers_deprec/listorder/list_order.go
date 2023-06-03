@@ -13,11 +13,11 @@ type Handler struct {
 
 type Response struct {
 	User   int64       `json:"user"`
-	Items  []OrderItem `json:"items"`
+	Items  []ItemOrder `json:"items"`
 	Status string      `json:"status"`
 }
 
-type OrderItem struct {
+type ItemOrder struct {
 	SKU   uint32 `json:"sku"`
 	Count uint16 `json:"count"`
 }
@@ -44,9 +44,9 @@ func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
 		log.Printf("list order: %s", err)
 		return Response{}, err
 	}
-	items := make([]OrderItem, 0, len(order.Items))
+	items := make([]ItemOrder, 0, len(order.Items))
 	for _, item := range order.Items {
-		items = append(items, OrderItem{
+		items = append(items, ItemOrder{
 			SKU:   item.SKU,
 			Count: item.Count,
 		})

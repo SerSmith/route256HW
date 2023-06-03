@@ -1,0 +1,27 @@
+syntax = 'proto3';
+
+package productService;
+
+option go_package = "https://gitlab.ozon.dev/sykuznetsov/homework-1/checkout/pkg/product_service";
+
+service ProductService {
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse) {}
+  rpc ListSkus(ListSkusRequest) returns (ListSkusResponse) {}
+}
+
+message GetProductRequest {
+  string token = 1 [json_name = "token"];
+  uint32 sku = 2 [json_name = "sku"];
+}
+message GetProductResponse {
+  string name = 1 [json_name = "name"];
+  uint32 price = 2 [json_name = "price"];
+}
+message ListSkusRequest {
+  string token = 1 [json_name = "token"];
+  uint32 start_after_sku = 2 [json_name = "startAfterSku"];
+  uint32 count = 3 [json_name = "count"];
+}
+message ListSkusResponse {
+  repeated uint32 skus = 1 [json_name = "skus"];
+}

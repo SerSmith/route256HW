@@ -2,39 +2,30 @@ package productservice
 
 import (
 	"context"
-	"log"
-	"net/http"
+	"fmt"
+	"route256/checkout/pkg/product_service/product_service"
 	"route256/checkout/internal/domain"
-	"route256/libs/cliwrapper"
 )
 
-type GetProductRequest struct {
-	Token string `json:"token"`
-	SKU   uint32 `json:"sku"`
-}
+func (c *Client) GetProduct(ctx context.Context, sku uint32) (*domain.Product, error) {
+	_, cancel := context.WithTimeout(context.Background(), c.wait_time)
+	defer cancel()
 
-type GetProductResponse struct {
-	Name  string `json:"name"`
-	Price uint32 `json:"price"`
-}
+	fmt.Println("I am here 1")
 
-func (c *Client) GetProduct(ctx context.Context, sku uint32) (domain.Product, error) {
-	productRequest := GetProductRequest{
+	response_from_api, err := c.psClient.GetProduct(ctx, &product_service.GetProductRequest{
 		Token: c.token,
-		SKU:   sku,
-	}
+		Sku:   sku,
+	})
 
-	ctx, fnCancel := context.WithTimeout(ctx, waittime)
-	defer fnCancel()
+	fmt.Println("I am here 2 ", response_from_api)
 
-	productResponse, err := cliwrapper.RequestAPI[GetProductRequest, GetProductResponse](ctx, http.MethodPost, c.productPath, productRequest)
 	if err != nil {
-		log.Printf("product service client, get product: %s", err)
-		return domain.Product{}, err
+		return nil, fmt.Errorf("send getProduct request: %w", err)
 	}
 
-	return domain.Product{
-		Name:  productResponse.Name,
-		Price: productResponse.Price,
-	}, nil
+	response := &domain.Product{Name: response_from_api.GetName(), Price: response_from_api.GetPrice()}
+	fmt.Println("I am here 3")
+	return response, nil
 }
+

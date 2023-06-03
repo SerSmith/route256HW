@@ -12,7 +12,9 @@ var (
 )
 
 func (m *Model) AddToCart(ctx context.Context, _ int64, sku uint32, count uint16) error {
-	stocks, err := m.loms.Stocks(ctx, sku)
+
+	stocks, err := m.LomsClient.Stocks(ctx, sku)
+
 	if err != nil {
 		return fmt.Errorf("get stocks: %w", err)
 	}

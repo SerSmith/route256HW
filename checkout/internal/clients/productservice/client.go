@@ -1,24 +1,28 @@
 package productservice
 
 import (
-	"net/url"
+	"log"
+	"route256/checkout/pkg/product_service/product_service"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-const (
-	getProductPath = "get_product"
-	waittime       = 5 * time.Second
-)
+const wait_time = time.Second * 10
 
 type Client struct {
-	token       string
-	productPath string
+	psClient  product_service.ProductServiceClient
+	token     string
+	wait_time time.Duration
 }
 
-func New(token, clientUrl string) *Client {
-	productUrl, _ := url.JoinPath(clientUrl, getProductPath)
-	return &Client{
-		token:       token,
-		productPath: productUrl,
+func New(clientUrl string, token string) (*Client, error) {
+	conn, err := grpc.Dial(clientUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("failed to connect to server: %v", err)
 	}
+
+	c := product_service.NewProductServiceClient(conn)
+	return &Client{psClient: c, token: token, wait_time: wait_time}, nil
 }

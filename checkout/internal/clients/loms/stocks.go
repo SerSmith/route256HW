@@ -2,40 +2,27 @@ package loms
 
 import (
 	"context"
-	"log"
-	"net/http"
+	"fmt"
 	"route256/checkout/internal/domain"
-	"route256/libs/cliwrapper"
+	"route256/checkout/pkg/loms/loms"
 )
 
-type StocksRequest struct {
-	SKU uint32 `json:"sku"`
-}
+func (c *Client) Stocks(ctx context.Context, SKU uint32) ([]domain.Stock, error) {
+	_, cancel := context.WithTimeout(context.Background(), c.wait_time)
+	defer cancel()
 
-type StocksResponse struct {
-	Stocks []struct {
-		WarehouseID int64  `json:"warehouseID"`
-		Count       uint64 `json:"count"`
-	} `json:"stocks"`
-}
+	fmt.Println("I am here loms client 2.3")
 
-func (c *Client) Stocks(ctx context.Context, sku uint32) ([]domain.Stock, error) {
-	requestStocks := StocksRequest{SKU: sku}
-
-	ctx, fnCancel := context.WithTimeout(ctx, waittime)
-	defer fnCancel()
-
-	responseStocks, err := cliwrapper.RequestAPI[StocksRequest, StocksResponse](ctx, http.MethodGet, c.stockURL, requestStocks)
+	resp, err := c.loms.Stocks(ctx, &loms_v1.StocksRequest{SKU: SKU})
 	if err != nil {
-		log.Printf("loms client, get stocks: %s", err)
-		log.Printf("stockURL: %s", c.stockURL)
-		return nil, err
+		return nil, fmt.Errorf("stocks: %w", err)
 	}
-	result := make([]domain.Stock, 0, len(responseStocks.Stocks))
-	for _, v := range responseStocks.Stocks {
+
+	result := make([]domain.Stock, 0, len(resp.Stocks))
+	for _, v := range resp.Stocks {
 		result = append(result, domain.Stock{
-			WarehouseID: v.WarehouseID,
-			Count:       v.Count,
+			WarehouseID: v.GetWarehouseID(),
+			Count:       v.GetCount(),
 		})
 	}
 

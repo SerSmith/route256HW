@@ -1,49 +1,62 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"net/http"
+	"net"
+	"route256/checkout/internal/api"
+	desc "route256/checkout/pkg/checkout_v1"
+	"route256/libs/mw/mylogging"
+	"route256/libs/mw/mypanic"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"route256/checkout/internal/clients/loms"
 	"route256/checkout/internal/clients/productservice"
 	"route256/checkout/internal/config"
-	"route256/checkout/internal/domain"
-	"route256/checkout/internal/handlers/addtocart"
-	"route256/checkout/internal/handlers/deletefromcart"
-	"route256/checkout/internal/handlers/listcart"
-	"route256/checkout/internal/handlers/purchase"
-	"route256/libs/srvwrapper"
+
 )
 
-const port = ":8080"
+const grpcPort = 50051
 
 func main() {
 
-	err := config.Init()
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(mylogging.Interceptor),
+		grpc.ChainUnaryInterceptor(mypanic.Interceptor),
+	)
+	reflection.Register(s)
+
+	err = config.Init()
+
 	if err != nil {
 		log.Fatalln("error reading config: ", err)
 	}
 
-	loms := loms.New(config.AppConfig.Services.Loms)
+	loms, err := loms.New(config.AppConfig.Services.Loms)
+
+	if err != nil {
+		log.Fatalf("failed to create loms client: %v", err)
+	}
+
 	log.Println("config", config.AppConfig)
 
-	productservice := productservice.New(config.AppConfig.Token, config.AppConfig.Services.ProductService)
+	productservice, err := productservice.New(config.AppConfig.Services.ProductService, config.AppConfig.Token)
 
-	model := domain.New(loms, productservice)
-
-	handAddToCart := addtocart.Handler{Model: model}
-	http.Handle("/addToCart", srvwrapper.New(handAddToCart.Handle))
-
-	handDeleteFromCart := deletefromcart.Handler{Model: model}
-	http.Handle("/deleteFromCart", srvwrapper.New(handDeleteFromCart.Handle))
-
-	handListCart := listcart.Handler{Model: model}
-	http.Handle("/listCart", srvwrapper.New(handListCart.Handle))
-
-	handPurchase := purchase.Handler{Model: model}
-	http.Handle("/purchase", srvwrapper.New(handPurchase.Handle))
-
-	err = http.ListenAndServe(port, nil)
 	if err != nil {
-		log.Fatalln("ERR: ", err)
+		log.Fatalf("failed to create productservice client: %v", err)
 	}
+
+	desc.RegisterCheckoutServer(s, service.NewServer(loms, productservice))
+
+	log.Printf("server listening at %v", lis.Addr())
+
+	if err = s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
 }
