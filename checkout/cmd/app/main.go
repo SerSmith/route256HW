@@ -5,15 +5,15 @@ import (
 	"log"
 	"net"
 	"route256/checkout/internal/api"
-	desc "route256/checkout/pkg/checkout_v1"
-	"route256/libs/mw/mylogging"
-	"route256/libs/mw/mypanic"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"route256/checkout/internal/clients/loms"
 	"route256/checkout/internal/clients/productservice"
 	"route256/checkout/internal/config"
+	desc "route256/checkout/pkg/checkout_v1"
+	"route256/libs/mw/mylogging"
+	"route256/libs/mw/mypanic"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 const grpcPort = 50051

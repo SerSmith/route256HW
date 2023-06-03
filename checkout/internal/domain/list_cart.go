@@ -25,7 +25,6 @@ func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, e
 	for i, item := range outCart {
 		product, err := m.productServiceClient.GetProduct(ctx, item.SKU)
 
-
 		if err != nil {
 			return 0, nil, err
 		}

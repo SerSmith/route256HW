@@ -1,12 +1,12 @@
 syntax = 'proto3';
 
-package route256.product;
+
 
 option go_package = "https://gitlab.ozon.dev/sykuznetsov/homework-1/checkout/pkg/product_service";
 
-service ProductService {
-  rpc GetProduct(route256.product.GetProductRequest) returns (route256.product.GetProductResponse) {}
-  rpc ListSkus(route256.product.ListSkusRequest) returns (route256.product.ListSkusResponse) {}
+service GetProduct {
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse) {}
+  rpc ListSkus(ListSkusRequest) returns (ListSkusResponse) {}
 }
 
 message GetProductRequest {

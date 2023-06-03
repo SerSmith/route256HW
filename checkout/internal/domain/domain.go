@@ -35,13 +35,13 @@ type ItemOrder struct {
 }
 
 type Model struct {
-	LomsClient                 LomsClient
+	LomsClient           LomsClient
 	productServiceClient ProductServiceClient
 }
 
 func New(LomsClient LomsClient, productServiceClient ProductServiceClient) *Model {
 	return &Model{
-		LomsClient:                 LomsClient,
+		LomsClient:           LomsClient,
 		productServiceClient: productServiceClient,
 	}
 }

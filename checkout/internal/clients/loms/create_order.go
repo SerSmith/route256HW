@@ -11,7 +11,6 @@ func (c *Client) CreateOrder(ctx context.Context, userID int64, items []domain.I
 	_, cancel := context.WithTimeout(context.Background(), c.wait_time)
 	defer cancel()
 
-
 	Items_for_req := make([]*loms_v1.ItemOrder, len(items))
 
 	for _, item := range items {

@@ -1,7 +1,6 @@
 package service
 
 import (
-
 	"context"
 	"route256/checkout/internal/domain"
 	"route256/checkout/pkg/checkout_v1"
@@ -11,20 +10,15 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-
-
-
 type service struct {
 	checkout_v1.UnimplementedCheckoutServer
 	Model *domain.Model
 }
 
-
-
 func NewServer(loms_client domain.LomsClient, product_service_client domain.ProductServiceClient) *service {
 	return &service{
-					Model: domain.New(loms_client, product_service_client),
-				}
+		Model: domain.New(loms_client, product_service_client),
+	}
 
 }
 
@@ -34,16 +28,14 @@ func (s *service) AddToCart(ctx context.Context, in *checkout_v1.AddToCartReques
 	SKU := in.GetSku()
 	Count := uint16(in.GetCount())
 
-
 	err := s.Model.AddToCart(ctx, User, SKU, Count)
-	
+
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
 
 	return &emptypb.Empty{}, nil
 }
-
 
 func (s *service) DeleteFromCart(ctx context.Context, in *checkout_v1.DeleteFromCartRequest) (*emptypb.Empty, error) {
 
@@ -53,7 +45,6 @@ func (s *service) DeleteFromCart(ctx context.Context, in *checkout_v1.DeleteFrom
 
 	err := s.Model.DeleteFromCart(ctx, User, SKU, Count)
 
-	
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, err.Error())
 	}
