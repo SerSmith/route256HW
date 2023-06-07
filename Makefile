@@ -1,6 +1,10 @@
+generate-all:
+	cd checkout && GOOS=linux GOARCH=amd64 make generate 
+	cd loms && GOOS=linux GOARCH=amd64 make generate
+
 build-all:
-	cd checkout && GOOS=linux GOARCH=amd64 make generate build
-	cd loms && GOOS=linux GOARCH=amd64 make generate build
+	cd checkout && GOOS=linux GOARCH=amd64 make build
+	cd loms && GOOS=linux GOARCH=amd64 make build
 	cd notifications && GOOS=linux GOARCH=amd64 make build
 
 run-all: build-all
