@@ -1,3 +1,4 @@
+package loms;
 
 syntax = 'proto3';
 
