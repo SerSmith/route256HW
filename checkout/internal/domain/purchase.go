@@ -15,5 +15,5 @@ func (m *Model) Purchase(ctx context.Context, userid int64) (int64, error) {
 		},
 	}
 
-	return m.loms.CreateOrder(ctx, userid, items)
+	return m.LomsClient.CreateOrder(ctx, userid, items)
 }

@@ -1,28 +1,29 @@
 package loms
 
 import (
+	"fmt"
 	"log"
-	"net/url"
+	"route256/checkout/pkg/loms/loms"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-const (
-	stockPath       = "stocks"
-	createOrderPath = "createOrder"
-	waittime        = 5 * time.Second
-)
+const wait_time = time.Second * 10
 
 type Client struct {
-	stockURL       string
-	createOrderURL string
+	loms      loms_v1.LomsClient
+	wait_time time.Duration
 }
 
-func New(clientUrl string) *Client {
+func New(clientUrl string) (*Client, error) {
+	fmt.Printf("TRY TO connect to %s", clientUrl)
+	conn, err := grpc.Dial(clientUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("failed to connect to server: %v", err)
+	}
 
-	stockUrl, _ := url.JoinPath(clientUrl, stockPath)
-
-	createOrderUrl, _ := url.JoinPath(clientUrl, createOrderPath)
-	log.Println("Write", clientUrl, "|", stockUrl, "|", createOrderUrl)
-	return &Client{stockURL: stockUrl,
-		createOrderURL: createOrderUrl}
+	c := loms_v1.NewLomsClient(conn)
+	return &Client{loms: c, wait_time: wait_time}, nil
 }

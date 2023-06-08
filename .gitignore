@@ -1,1 +1,4 @@
-**/.DS_Store
+.DS_Store
+*/config.yaml
+checkout/pkg/*
+checkout/vendor-proto/*

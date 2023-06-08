@@ -1,40 +1,38 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"net/http"
-	"route256/libs/srvwrapper"
-	"route256/loms/internal/domain"
-	"route256/loms/internal/handlers/cancelorder"
-	"route256/loms/internal/handlers/createorder"
-	"route256/loms/internal/handlers/listorder"
-	"route256/loms/internal/handlers/orderpayed"
-	"route256/loms/internal/handlers/stocks"
+	"net"
+	"route256/libs/mw/mylogging"
+	"route256/libs/mw/mypanic"
+	"route256/loms/internal/api/v1"
+	desc "route256/loms/pkg/loms_v1"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
-const port = ":8081"
+const grpcPort = 50052
 
 func main() {
 
-	model := domain.New()
-
-	handCreateOrder := &createorder.Handler{Model: model}
-	http.Handle("/createOrder", srvwrapper.New(handCreateOrder.Handle))
-
-	handListOrder := &listorder.Handler{Model: model}
-	http.Handle("/listOrder", srvwrapper.New(handListOrder.Handle))
-
-	handOrderPayed := &orderpayed.Handler{Model: model}
-	http.Handle("/orderPayed", srvwrapper.New(handOrderPayed.Handle))
-
-	handCancelOrder := &cancelorder.Handler{Model: model}
-	http.Handle("/cancelOrder", srvwrapper.New(handCancelOrder.Handle))
-
-	handStocks := &stocks.Handler{Model: model}
-	http.Handle("/stocks", srvwrapper.New(handStocks.Handle))
-
-	err := http.ListenAndServe(port, nil)
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
-		log.Fatalln("ERR: ", err)
+		log.Fatalf("failed to listen: %v", err)
 	}
+
+	s := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(mylogging.Interceptor),
+		grpc.ChainUnaryInterceptor(mypanic.Interceptor),
+	)
+	reflection.Register(s)
+	desc.RegisterLomsServer(s, service.NewServer())
+
+	log.Printf("server listening at %v", lis.Addr())
+
+	if err = s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+
 }

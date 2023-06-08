@@ -15,14 +15,9 @@ type Response struct {
 	OrderID int64 `json:"orderID"`
 }
 
-type OrderItem struct {
-	SKU   uint32 `json:"sku"`
-	Count uint16 `json:"count"`
-}
-
 type Request struct {
-	User  int64       `json:"user"`
-	Items []OrderItem `json:"items"`
+	User  int64              `json:"user"`
+	Items []domain.ItemOrder `json:"items"`
 }
 
 var (

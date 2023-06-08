@@ -1,3 +1,7 @@
+generate-all:
+	cd checkout && GOOS=linux GOARCH=amd64 make generate 
+	cd loms && GOOS=linux GOARCH=amd64 make generate
+
 build-all:
 	cd checkout && GOOS=linux GOARCH=amd64 make build
 	cd loms && GOOS=linux GOARCH=amd64 make build
