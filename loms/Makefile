@@ -101,4 +101,8 @@ generate: bin vendor-proto/google/api vendor-proto/google/protobuf vendor-proto/
 	--grpc-gateway_out pkg/loms_v1 --grpc-gateway_opt paths=source_relative \
 	--validate_out="lang=go,paths=source_relative:pkg/loms_v1" \
 	api/v1/service.proto
+goose-status: 
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5432/loms?sslmode=disable" status
+goose-up: 
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5432/loms?sslmode=disable" up
 

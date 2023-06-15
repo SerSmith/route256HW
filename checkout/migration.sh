@@ -1,0 +1,2 @@
+goose -dir ./migrations postgres "postgres://user:password@postgres_checkout:5433/checkout?sslmode=disable" reset
+goose -dir ./migrations postgres "postgres://user:password@postgres_checkout:5433/checkout?sslmode=disable" up

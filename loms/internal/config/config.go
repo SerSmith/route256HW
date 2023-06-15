@@ -9,12 +9,6 @@ import (
 const pathToConfig = "config.yaml"
 
 type Config struct {
-	Token    string `yaml:"token"`
-	Services struct {
-		Loms           string `yaml:"loms"`
-		ProductService string `yaml:"productservice"`
-	} `yaml:"services"`
-	
 	DB struct {
 		User			string `yaml:"user"`
 		Password		string `yaml:"password"`

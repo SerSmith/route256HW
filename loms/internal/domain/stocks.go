@@ -1,12 +1,17 @@
 package domain
 
-import "context"
+import (
+"context"
+"fmt"
+)
 
 func (m *Model) Stocks(ctx context.Context, sku uint32) ([]Stock, error) {
-	return []Stock{
-		{
-			WarehouseID: 1,
-			Count:       37,
-		},
-	}, nil
+
+	stocks, err := m.DB.GetAvailableBySku(ctx, sku)
+
+	if err != nil{
+		return nil, fmt.Errorf("GetAvailable: %s", err)
+	}
+
+	return stocks, nil
 }

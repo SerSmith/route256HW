@@ -11,7 +11,7 @@ var (
 	ErrStockInsufficient = errors.New("No such SKUs on stocks")
 )
 
-func (m *Model) AddToCart(ctx context.Context, _ int64, sku uint32, count uint16) error {
+func (m *Model) AddToCart(ctx context.Context, user int64, sku uint32, count uint16) error {
 
 	stocks, err := m.LomsClient.Stocks(ctx, sku)
 
@@ -21,13 +21,25 @@ func (m *Model) AddToCart(ctx context.Context, _ int64, sku uint32, count uint16
 
 	log.Printf("stocks: %v", stocks)
 
+	ok := false
+
 	counter := int64(count)
 	for _, stock := range stocks {
 		counter -= int64(stock.Count)
 		if counter <= 0 {
-			return nil
+			ok = true
+			break
 		}
 	}
 
-	return ErrStockInsufficient
+	if ok {
+
+		m.DB.AddToCartDB(ctx, user, sku, count)
+
+	} else {
+		return ErrStockInsufficient
+	}
+
+	return nil
+	
 }

@@ -15,9 +15,9 @@ type service struct {
 	Model *domain.Model
 }
 
-func NewServer(loms_client domain.LomsClient, product_service_client domain.ProductServiceClient) *service {
+func NewServer(loms_client domain.LomsClient, product_service_client domain.ProductServiceClient, DB domain.Repository) *service {
 	return &service{
-		Model: domain.New(loms_client, product_service_client),
+		Model: domain.New(loms_client, product_service_client, DB),
 	}
 
 }

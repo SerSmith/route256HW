@@ -13,6 +13,14 @@ type ProductServiceClient interface {
 	GetProduct(ctx context.Context, sku uint32) (*Product, error)
 }
 
+type Repository interface {
+	AddToCartDB(ctx context.Context, user int64, sku uint32, count uint16) error
+	DeleteFromCartDB(ctx context.Context, user int64, sku uint32, count uint16) (error)
+	GetCartQauntDB(ctx context.Context, user int64, sku uint32) (uint16, error)
+	GetCartDB(ctx context.Context, user int64) ([]ItemOrder, error)
+}
+
+
 type Stock struct {
 	WarehouseID int64
 	Count       uint64
@@ -37,11 +45,13 @@ type ItemOrder struct {
 type Model struct {
 	LomsClient           LomsClient
 	productServiceClient ProductServiceClient
+	DB Repository
 }
 
-func New(LomsClient LomsClient, productServiceClient ProductServiceClient) *Model {
+func New(LomsClient LomsClient, productServiceClient ProductServiceClient, DB Repository) *Model {
 	return &Model{
 		LomsClient:           LomsClient,
 		productServiceClient: productServiceClient,
+		DB:				      DB,
 	}
 }
