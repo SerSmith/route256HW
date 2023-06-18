@@ -1,33 +1,35 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
 	"os/signal"
-	"context"
 	"route256/checkout/internal/api"
 	"route256/checkout/internal/clients/loms"
 	"route256/checkout/internal/clients/productservice"
 	"route256/checkout/internal/config"
+	"route256/checkout/internal/repository/postgres"
 	desc "route256/checkout/pkg/checkout_v1"
+	"route256/libs/closer"
 	"route256/libs/mw/mylogging"
 	"route256/libs/mw/mypanic"
 	"route256/libs/tx"
 	"syscall"
+	"time"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"route256/libs/closer"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"route256/checkout/internal/repository/postgres"
 )
 
-const grpcPort = 50051
-
-
+const (
+	grpcPort        = 50051
+	shutdownTimeout = 5 * time.Second
+)
 
 func run(ctx context.Context) error {
-
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
@@ -52,18 +54,11 @@ func run(ctx context.Context) error {
 		log.Fatalf("failed to create loms client: %v", err)
 	}
 
-
 	var closer = new(closer.Closer)
 
 	// "postgres://user:password@postgres_checkout:5433/checkout?sslmode=disable"
 
-	BDPath := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-							config.AppConfig.DB.User,
-							config.AppConfig.DB.Password,
-							config.AppConfig.DB.Server,
-							config.AppConfig.DB.Name,
-						)
-
+	BDPath := config.AppConfig.DSN()
 	pool, err := pgxpool.Connect(ctx, BDPath)
 	if err != nil {
 		log.Fatalf("connect to db: %s", err)
@@ -85,13 +80,21 @@ func run(ctx context.Context) error {
 		log.Fatalf("failed to create productservice client: %v", err)
 	}
 
-
 	desc.RegisterCheckoutServer(s, service.NewServer(loms, productservice, repo))
 
 	log.Printf("server listening at %v", lis.Addr())
 
 	if err = s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
+	}
+
+	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := closer.Close(shutdownCtx); err != nil {
+		return fmt.Errorf("closer: %v", err)
 	}
 
 	return nil

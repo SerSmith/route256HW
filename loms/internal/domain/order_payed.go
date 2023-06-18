@@ -6,8 +6,6 @@ import (
 )
 
 func (m *Model) OrderPayed(ctx context.Context, orderID int64) error {
-	
-
 
 	stocks, err := m.DB.GetReservedByOrderID(ctx, orderID)
 	if err != nil {
