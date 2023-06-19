@@ -1,5 +1,22 @@
 package domain
 
+import "context"
+
+type Repository interface {
+	WriteOrder(ctx context.Context, items []ItemOrder, User int64) (int64, error)
+	ReserveProducts(ctx context.Context, orderID int64, stockInfos []StockInfo) error
+	MinusAvalibleCount(ctx context.Context, stockInfos []StockInfo) error
+	PlusAvalibleCount(ctx context.Context, stockInfos []StockInfo) error
+	GetAvailableBySku(ctx context.Context, sku uint32) ([]Stock, error)
+	ChangeOrderStatus(ctx context.Context, orderID int64, Status OrderStatus) error
+	GetOrderStatus(ctx context.Context, orderID int64) (OrderStatus, error)
+	GetOrderDetails(ctx context.Context, orderID int64) (Order, error)
+	UnreserveProducts(ctx context.Context, orderID int64) error
+	BuyProducts(ctx context.Context, stocks []StockInfo) error
+	GetReservedByOrderID(ctx context.Context, orderID int64) ([]StockInfo, error)
+	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
+}
+
 type OrderStatus string
 
 const (
@@ -26,9 +43,16 @@ type Stock struct {
 	Count       uint64
 }
 
-type Model struct {
+type StockInfo struct {
+	SKU         int64
+	WarehouseID int64
+	Count       uint64
 }
 
-func New() *Model {
-	return &Model{}
+type Model struct {
+	DB Repository
+}
+
+func New(DB Repository) *Model {
+	return &Model{DB: DB}
 }

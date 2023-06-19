@@ -15,8 +15,8 @@ type service struct {
 	Model *domain.Model
 }
 
-func NewServer() *service {
-	return &service{}
+func NewServer(Model *domain.Model) *service {
+	return &service{Model: Model}
 
 }
 

@@ -15,6 +15,13 @@ type Config struct {
 		Loms           string `yaml:"loms"`
 		ProductService string `yaml:"productservice"`
 	} `yaml:"services"`
+
+	DB struct {
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		Server   string `yaml:"server"`
+		Name     string `yaml:"name"`
+	} `yaml:"DB"`
 }
 
 var AppConfig = Config{}
@@ -31,4 +38,12 @@ func Init() error {
 	}
 
 	return nil
+}
+
+func (c *Config) DSN() string {
+	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
+		c.DB.User,
+		c.DB.Password,
+		c.DB.Server,
+		c.DB.Name)
 }

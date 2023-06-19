@@ -2,3 +2,8 @@ token: "testtoken"
 services:
  loms: "loms:50052"
  productservice: "route256.pavl.uk:8082"
+DB:
+  user: "user"
+  password: "password"
+  server: postgres_checkout:5433
+  name: "checkout"

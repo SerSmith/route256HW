@@ -1,0 +1,5 @@
+DB:
+  user: "user"
+  password: "password"
+  server: postgres_loms:5432
+  name: "loms"

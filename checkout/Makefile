@@ -113,3 +113,7 @@ generate_product_service: bin vendor-proto/google/api vendor-proto/google/protob
 
 generate: generate_checkout generate_loms generate_product_service
 
+goose-status: 
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5433/checkout?sslmode=disable" status
+goose-up: 
+	goose -dir ./migrations postgres "postgres://user:password@localhost:5433/checkout?sslmode=disable" up
