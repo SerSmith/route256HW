@@ -8,16 +8,19 @@ import (
 	"sync"
 )
 
-
 const (
 	WORKERS_NUM = 5
 )
 
+var (
+	GetProductUnknownName  = "Unknown"
+	GetProductUnknownPrice = uint32(0)
+)
 
 func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, error) {
 	OrderItems, err := m.DB.GetCartDB(ctx, user)
 
-	if err != nil{
+	if err != nil {
 		return 0, nil, fmt.Errorf("err in GetCartDB: %v", err)
 	}
 
@@ -26,31 +29,31 @@ func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, e
 	wp := workerpool.New(WORKERS_NUM)
 	wg := sync.WaitGroup{}
 
-
 	for _, item := range OrderItems {
 		wg.Add(1)
 		NowItem := item
 		err := wp.Run(ctx,
-							func (ctx context.Context){
-								defer wg.Done()
+			func(ctx context.Context) {
+				defer wg.Done()
 
-								product, err := m.productServiceClient.GetProduct(ctx, NowItem.SKU)
+				product, err := m.productServiceClient.GetProduct(ctx, NowItem.SKU)
 
-								if err != nil {
-									log.Print("err in runOmeGetProductInstance ", err)
-									product = &Product{Name:	"Unknown",
-														Price:	0}
-								}
+				if err != nil {
+					log.Print("err in runOmeGetProductInstance %w", err)
+					product = &Product{Name: GetProductUnknownName,
+						Price: GetProductUnknownPrice}
+				}
 
-								resChan <- ItemCart{
-									SKU:     NowItem.SKU,
-									Product: *product,
-									Count: NowItem.Count,
-								}})
-		if err != nil{
-			return 0, nil, fmt.Errorf("Error in workerpool ", err)
+				resChan <- ItemCart{
+					SKU:     NowItem.SKU,
+					Product: *product,
+					Count:   NowItem.Count,
+				}
+			})
+		if err != nil {
+			return 0, nil, fmt.Errorf("Error in workerpool %w", err)
 		}
-		
+
 	}
 
 	wg.Wait()
@@ -59,13 +62,11 @@ func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, e
 	var totalPrice uint32
 
 	for range OrderItems {
-
-		oneOutCart := <- resChan
+		oneOutCart := <-resChan
 
 		outCart = append(outCart, oneOutCart)
 		totalPrice += oneOutCart.Product.Price * uint32(oneOutCart.Count)
 	}
-
 
 	return totalPrice, outCart, nil
 }

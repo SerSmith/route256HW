@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -10,10 +11,10 @@ const pathToConfig = "config.yaml"
 
 type Config struct {
 	DB struct {
-		User			string `yaml:"user"`
-		Password		string `yaml:"password"`
-		Server			string `yaml:"server"`
-		Name			string `yaml:"name"`
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		Server   string `yaml:"server"`
+		Name     string `yaml:"name"`
 	} `yaml:"DB"`
 }
 

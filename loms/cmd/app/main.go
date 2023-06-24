@@ -6,26 +6,25 @@ import (
 	"log"
 	"net"
 	"os/signal"
+	"route256/libs/closer"
 	"route256/libs/mw/mylogging"
 	"route256/libs/mw/mypanic"
 	"route256/libs/tx"
 	"route256/loms/internal/api/v1"
+	"route256/loms/internal/config"
 	"route256/loms/internal/domain"
 	"route256/loms/internal/repository/postgres"
-	"route256/loms/internal/config"
 	desc "route256/loms/pkg/loms_v1"
 	"syscall"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"route256/libs/closer"
 )
 
 const grpcPort = 50052
 
 func run(ctx context.Context) error {
-
 
 	err := config.Init()
 
@@ -33,15 +32,14 @@ func run(ctx context.Context) error {
 		log.Fatalln("error reading config: ", err)
 	}
 
-
 	var closer = new(closer.Closer)
 
 	BDPath := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-	config.AppConfig.DB.User,
-	config.AppConfig.DB.Password,
-	config.AppConfig.DB.Server,
-	config.AppConfig.DB.Name,
-)
+		config.AppConfig.DB.User,
+		config.AppConfig.DB.Password,
+		config.AppConfig.DB.Server,
+		config.AppConfig.DB.Name,
+	)
 
 	pool, err := pgxpool.Connect(ctx, BDPath)
 	if err != nil {
@@ -52,7 +50,6 @@ func run(ctx context.Context) error {
 		pool.Close()
 		return nil
 	})
-
 
 	provider := tx.New(pool)
 	repo := postgres.New(provider)

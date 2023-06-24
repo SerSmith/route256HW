@@ -1,14 +1,15 @@
 package domain
 
-import ("context"
-		"log")
+import (
+	"context"
+	"log"
+)
 
 func (m *Model) CancelOrder(ctx context.Context, orderID int64) error {
 
-
 	status, err := m.DB.GetOrderStatus(ctx, orderID)
 
-	if err!= nil{
+	if err != nil {
 		log.Fatalf("GetOrderStatus: %s", err)
 	}
 
@@ -25,7 +26,7 @@ func (m *Model) CancelOrder(ctx context.Context, orderID int64) error {
 	if err != nil {
 		log.Fatalf("BuyProducts: %s", err)
 	}
- 
+
 	err = m.DB.UnreserveProducts(ctx, orderID)
 	if err != nil {
 		log.Fatalf("UnreserveProducts: %s", err)

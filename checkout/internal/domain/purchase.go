@@ -1,8 +1,8 @@
 package domain
 
 import (
-"context"
-"fmt"
+	"context"
+	"fmt"
 )
 
 func (m *Model) Purchase(ctx context.Context, userid int64) (int64, error) {
@@ -13,10 +13,9 @@ func (m *Model) Purchase(ctx context.Context, userid int64) (int64, error) {
 		return 0, fmt.Errorf("err in getCartDB: %v", err)
 	}
 
-	if len(items) == 0{
+	if len(items) == 0 {
 		return 0, fmt.Errorf("Empty cart")
 	}
-
 
 	return m.LomsClient.CreateOrder(ctx, userid, items)
 }
