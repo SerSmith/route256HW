@@ -39,3 +39,11 @@ func Init() error {
 
 	return nil
 }
+
+func (c *Config) DSN() string {
+	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
+		c.DB.User,
+		c.DB.Password,
+		c.DB.Server,
+		c.DB.Name)
+}

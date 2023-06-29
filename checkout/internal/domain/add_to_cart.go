@@ -33,7 +33,6 @@ func (m *Model) AddToCart(ctx context.Context, user int64, sku uint32, count uin
 	}
 
 	if ok {
-
 		err = m.DB.AddToCartDB(ctx, user, sku, count)
 
 		if err != nil {

@@ -34,12 +34,7 @@ func run(ctx context.Context) error {
 
 	var closer = new(closer.Closer)
 
-	BDPath := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-		config.AppConfig.DB.User,
-		config.AppConfig.DB.Password,
-		config.AppConfig.DB.Server,
-		config.AppConfig.DB.Name,
-	)
+	BDPath := config.AppConfig.DSN()
 
 	pool, err := pgxpool.Connect(ctx, BDPath)
 	if err != nil {

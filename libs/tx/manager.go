@@ -22,6 +22,7 @@ func New(pool *pgxpool.Pool) *Manager {
 
 type DBProvider interface {
 	GetDB(ctx context.Context) Querier
+	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
 }
 
 type Querier interface {

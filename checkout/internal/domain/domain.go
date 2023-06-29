@@ -20,6 +20,8 @@ type Repository interface {
 	DeleteFromCartDB(ctx context.Context, user int64, sku uint32, count uint16) error
 	GetCartQauntDB(ctx context.Context, user int64, sku uint32) (uint16, error)
 	GetCartDB(ctx context.Context, user int64) ([]ItemOrder, error)
+	WipeCartDB(ctx context.Context, user int64) error
+	RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error
 }
 
 type Stock struct {

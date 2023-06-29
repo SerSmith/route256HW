@@ -17,13 +17,17 @@ import (
 	"route256/libs/mw/mypanic"
 	"route256/libs/tx"
 	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
-const grpcPort = 50051
+const (
+	grpcPort        = 50051
+	shutdownTimeout = 5 * time.Second
+)
 
 func run(ctx context.Context) error {
 
@@ -54,13 +58,7 @@ func run(ctx context.Context) error {
 
 	// "postgres://user:password@postgres_checkout:5433/checkout?sslmode=disable"
 
-	BDPath := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-		config.AppConfig.DB.User,
-		config.AppConfig.DB.Password,
-		config.AppConfig.DB.Server,
-		config.AppConfig.DB.Name,
-	)
-
+	BDPath := config.AppConfig.DSN()
 	pool, err := pgxpool.Connect(ctx, BDPath)
 	if err != nil {
 		log.Fatalf("connect to db: %s", err)
@@ -88,6 +86,15 @@ func run(ctx context.Context) error {
 
 	if err = s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
+	}
+
+	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := closer.Close(shutdownCtx); err != nil {
+		return fmt.Errorf("closer: %v", err)
 	}
 
 	return nil

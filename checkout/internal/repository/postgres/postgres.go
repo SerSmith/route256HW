@@ -3,9 +3,10 @@ package postgres
 import (
 	"context"
 	"fmt"
-
-	// "log"
+	"log"
+	"route256/checkout/internal/converter/schema2domain"
 	"route256/checkout/internal/domain"
+	"route256/checkout/internal/repository/schema"
 	"route256/libs/tx"
 
 	sq "github.com/Masterminds/squirrel"
@@ -111,12 +112,44 @@ func (r *Repository) GetCartDB(ctx context.Context, user int64) ([]domain.ItemOr
 		return nil, fmt.Errorf("build query for ReservePtoduct get: %s", err)
 	}
 
-	var itemsInCart []domain.ItemOrder
-	err = pgxscan.Select(ctx, db, &itemsInCart, rawSQL, args...)
+	var itemsInCartSchema []schema.ItemOrder
+	err = pgxscan.Select(ctx, db, &itemsInCartSchema, rawSQL, args...)
 
 	if err != nil {
 		return nil, fmt.Errorf("exec for ReservePtoduct get: %w", err)
 	}
 
+	var itemsInCart []domain.ItemOrder
+
+	for _, item := range itemsInCartSchema {
+		itemsInCart = append(itemsInCart, schema2domain.ItemOrderConvert(item))
+	}
+
 	return itemsInCart, nil
+}
+
+func (r *Repository) WipeCartDB(ctx context.Context, user int64) error {
+	db := r.provider.GetDB(ctx)
+
+	query := psql.Delete(tableCart).
+		Where(sq.Eq{"user_id": user})
+
+	rawSQL, args, err := query.ToSql()
+	if err != nil {
+		return fmt.Errorf("build query for WipeCartDB get: %w", err)
+	}
+
+	log.Print(rawSQL, " ", args)
+
+	_, err = db.Exec(ctx, rawSQL, args...)
+
+	if err != nil {
+		return fmt.Errorf("exec for ReservePtoduct get: %w", err)
+	}
+
+	return nil
+}
+
+func (r *Repository) RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error {
+	return r.provider.RunRepeatableRead(ctx, fn)
 }
