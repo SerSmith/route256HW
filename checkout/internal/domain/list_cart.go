@@ -17,7 +17,7 @@ const (
 func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, error) {
 	OrderItems, err := m.DB.GetCartDB(ctx, user)
 
-	if err != nil{
+	if err != nil {
 		return 0, nil, fmt.Errorf("err in GetCartDB: %v", err)
 	}
 
@@ -38,8 +38,10 @@ func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, e
 
 								if err != nil {
 									log.Print("err in runOmeGetProductInstance ", err)
-									product = &Product{Name:	"Unknown",
-														Price:	0}
+									product = &Product{
+										Name:	"Unknown",
+										Price:	0,
+									}
 								}
 
 								resChan <- ItemCart{

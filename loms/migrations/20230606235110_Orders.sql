@@ -1,7 +1,8 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS Orders (
-    orderID bigint NOT NULL,
+    orderID serial NOT NULL,
+    user_id bigint NOT NULL,
     sku bigint NOT NULL,
     "count" int,
     PRIMARY KEY (orderID, sku)
