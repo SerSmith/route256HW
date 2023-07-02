@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS cart (
     "count" int,
     PRIMARY KEY (user_id, sku)
 );
+
 -- +goose StatementEnd
 
 -- +goose Down

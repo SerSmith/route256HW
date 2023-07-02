@@ -11,6 +11,11 @@ func (c *Client) GetProduct(ctx context.Context, sku uint32) (*domain.Product, e
 	_, cancel := context.WithTimeout(context.Background(), c.wait_time)
 	defer cancel()
 
+	err := c.Limiter.Wait(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	response_from_api, err := c.psClient.GetProduct(ctx, &product_service.GetProductRequest{
 		Token: c.token,
 		Sku:   sku,
