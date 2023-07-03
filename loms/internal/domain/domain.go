@@ -2,6 +2,12 @@ package domain
 
 import "context"
 
+type Sender interface {
+	SendAsyncMessage(message StatusChangeMessage) error
+	SendMessage(message StatusChangeMessage) error
+	SendMessages(messages []StatusChangeMessage) error
+}
+
 type Repository interface {
 	WriteOrder(ctx context.Context, items []ItemOrder, User int64) (int64, error)
 	ReserveProducts(ctx context.Context, orderID int64, stockInfos []StockInfo) error
@@ -25,6 +31,7 @@ const (
 	FailedStatus          OrderStatus = "failed"
 	PayedStatus           OrderStatus = "payed"
 	CanceledStatus        OrderStatus = "cancelled"
+	NullStatus            OrderStatus = "null"
 )
 
 type ItemOrder struct {
@@ -51,8 +58,16 @@ type StockInfo struct {
 
 type Model struct {
 	DB Repository
+	KP Sender
 }
 
-func New(DB Repository) *Model {
-	return &Model{DB: DB}
+type StatusChangeMessage struct {
+	OldStatus string
+	NewStatus string
+	OrderID   int64
+}
+
+func New(DB Repository, KP Sender) *Model {
+	return &Model{DB: DB,
+		KP: KP}
 }

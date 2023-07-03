@@ -22,7 +22,7 @@ func (m *Model) OrderPayed(ctx context.Context, orderID int64) error {
 		log.Fatalf("UnreserveProducts: %s", err)
 	}
 
-	err = m.DB.ChangeOrderStatus(ctx, orderID, PayedStatus)
+	err = m.ChangeOrderStatusWithNotification(ctx, orderID, PayedStatus)
 	if err != nil {
 		log.Fatalf("ChangeOrderStatus: %s", err)
 	}

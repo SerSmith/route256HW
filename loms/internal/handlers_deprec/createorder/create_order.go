@@ -39,12 +39,14 @@ func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
 	log.Printf("create order, request: %+v", req)
 
 	items := make([]domain.ItemOrder, 0, len(req.Items))
+
 	for _, item := range req.Items {
 		items = append(items, domain.ItemOrder{
 			SKU:   item.SKU,
 			Count: item.Count,
 		})
 	}
+
 	id, err := h.Model.CreateOrder(ctx, req.User, items)
 	if err != nil {
 		log.Printf("create order: %s", err)

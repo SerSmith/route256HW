@@ -8,7 +8,8 @@ build-all:
 	cd notifications && GOOS=linux GOARCH=amd64 make build
 
 run-all: build-all
-	sudo docker compose up --force-recreate --build  -d
+	sudo docker compose up --force-recreate --build -d
+	sleep 3
 	cd checkout && make goose-up
 	cd loms && make goose-up
 

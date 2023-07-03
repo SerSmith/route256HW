@@ -52,17 +52,19 @@ func (m *Model) checkPtoductReservation(ctx context.Context, item ItemOrder) ([]
 
 func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder) (int64, error) {
 
-	var orderID int64
+	var OrderID int64
 
 	err := m.DB.RunRepeatableRead(ctx,
 		func(ctxTx context.Context) error {
 
-			orderID, err := m.DB.WriteOrder(ctx, items, userID)
+			OrderID_, err := m.DB.WriteOrder(ctx, items, userID)
+
+			OrderID = OrderID_
 			if err != nil {
 				return fmt.Errorf("err in WriteOrderItems err %v", err)
 			}
 
-			err = m.DB.ChangeOrderStatus(ctx, orderID, NewStatus)
+			err = m.ChangeOrderStatusWithNotification(ctx, OrderID, NewStatus)
 			if err != nil {
 				return fmt.Errorf("err in ChangeOrderStatus err %v", err)
 			}
@@ -74,7 +76,7 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 
 				if err != nil {
 
-					err2 := m.DB.ChangeOrderStatus(ctx, orderID, FailedStatus)
+					err2 := m.ChangeOrderStatusWithNotification(ctx, OrderID, FailedStatus)
 
 					if err2 != nil {
 						return fmt.Errorf("err in ChangeOrderStatus err %v", err2)
@@ -87,11 +89,10 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 
 			for _, reservedStock := range reservedStocks {
 
-
-				err = m.DB.ReserveProducts(ctx, orderID, reservedStock)
+				err = m.DB.ReserveProducts(ctx, OrderID, reservedStock)
 
 				if err != nil {
-					err2 := m.DB.ChangeOrderStatus(ctx, orderID, FailedStatus)
+					err2 := m.ChangeOrderStatusWithNotification(ctx, OrderID, FailedStatus)
 					if err2 != nil {
 						return fmt.Errorf("err in ChangeOrderStatus err %v", err2)
 					}
@@ -101,7 +102,7 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 				err = m.DB.MinusAvalibleCount(ctx, reservedStock)
 
 				if err != nil {
-					err2 := m.DB.ChangeOrderStatus(ctx, orderID, FailedStatus)
+					err2 := m.ChangeOrderStatusWithNotification(ctx, OrderID, FailedStatus)
 					if err2 != nil {
 						return fmt.Errorf("err in ChangeOrderStatus err %v", err2)
 					}
@@ -109,7 +110,7 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 				}
 			}
 
-			err = m.DB.ChangeOrderStatus(ctx, orderID, AwaitingPaymentStatus)
+			err = m.ChangeOrderStatusWithNotification(ctx, OrderID, AwaitingPaymentStatus)
 			if err != nil {
 				return fmt.Errorf("err in ChangeOrderStatus err %v", err)
 			}
@@ -122,5 +123,5 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 		return 0, fmt.Errorf("err in RunRepeatableRead: %w", err)
 	}
 
-	return orderID, err
+	return OrderID, err
 }

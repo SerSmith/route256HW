@@ -1,6 +1,6 @@
-package checkout;
-
 syntax = 'proto3';
+
+package checkout;
 
 option go_package = "https://gitlab.ozon.dev/sykuznetsov/homework-1/checkout/pkg/checkout_v1";
 

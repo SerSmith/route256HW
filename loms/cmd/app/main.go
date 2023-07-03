@@ -13,7 +13,9 @@ import (
 	"route256/loms/internal/api/v1"
 	"route256/loms/internal/config"
 	"route256/loms/internal/domain"
+	"route256/loms/internal/infrastructure/kafka"
 	"route256/loms/internal/repository/postgres"
+	"route256/loms/internal/sender"
 	desc "route256/loms/pkg/loms_v1"
 	"syscall"
 
@@ -49,7 +51,14 @@ func run(ctx context.Context) error {
 	provider := tx.New(pool)
 	repo := postgres.New(provider)
 
-	m := domain.New(repo)
+	kafkaProducer, err := kafka.NewProducer(config.AppConfig.Kafka.Brokers)
+	if err != nil {
+		log.Fatalf("failed to create kafkaProducer: %v", err)
+	}
+
+	ks := sender.NewKafkaSender(kafkaProducer, config.AppConfig.Kafka.TopicStatus)
+
+	m := domain.New(repo, ks)
 
 	serv := service.NewServer(m)
 

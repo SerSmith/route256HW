@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"log"
 	"route256/libs/tx"
 	"route256/loms/internal/converter/schema2domain"
 	"route256/loms/internal/domain"
@@ -159,9 +158,7 @@ ON CONFLICT (sku, warehouseID) DO UPDATE
 
 	for _, stockInfo := range stockInfos {
 
-		tmp, err := db.Exec(ctx, query, stockInfo.SKU, stockInfo.WarehouseID, stockInfo.Count)
-
-		log.Println("tmp ", tmp)
+		_, err := db.Exec(ctx, query, stockInfo.SKU, stockInfo.WarehouseID, stockInfo.Count)
 
 		if err != nil {
 			return fmt.Errorf("exec insert stocks: %v", err)
@@ -342,7 +339,15 @@ func (r *Repository) GetOrderStatus(ctx context.Context, orderID int64) (domain.
 		return "", fmt.Errorf("exec for ReservePtoduct get: %w", err)
 	}
 
-	return status[0], nil
+	var out domain.OrderStatus
+
+	if len(status) > 0 {
+		out = status[0]
+	} else {
+		out = domain.NullStatus
+	}
+
+	return out, nil
 }
 
 func (r *Repository) RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error {
