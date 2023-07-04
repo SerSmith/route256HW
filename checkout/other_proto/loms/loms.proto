@@ -1,20 +1,18 @@
+package loms;
 
 syntax = 'proto3';
-
-package loms;
 
 option go_package = "https://gitlab.ozon.dev/sykuznetsov/homework-1/checkout/pkg/loms_v1";
 
 import "google/protobuf/empty.proto";
 
 
-service loms {
-
-rpc cancelOrder(cancelOrderRequest) returns (google.protobuf.Empty);
-rpc createOrder(createOrderRequest) returns (createOrderResponse);
-rpc listOrder(listOrderRequest) returns (listOrderResponse);
-rpc orderPayed(orderPayedRequest) returns (google.protobuf.Empty);
-rpc stocks(stocksRequest) returns (stocksResponse);
+service Loms {
+rpc CancelOrder(CancelOrderRequest) returns (google.protobuf.Empty);
+rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+rpc ListOrder(ListOrderRequest) returns (ListOrderResponse);
+rpc OrderPayed(OrderPayedRequest) returns (google.protobuf.Empty);
+rpc Stocks(StocksRequest) returns (StocksResponse);
 
 }
 
@@ -23,46 +21,44 @@ message ItemOrder {
     uint32 Count = 2;
 }
 
-message cancelOrderRequest {
+message CancelOrderRequest {
     int64 OrderID = 1;
 }
 
-message createOrderRequest {
+message CreateOrderRequest {
     int64 User = 1;
     repeated ItemOrder Items = 2;
 }
 
-message createOrderResponse {
+message CreateOrderResponse {
     int64 OrderID = 1;
 }
 
-
-message listOrderResponse {
+message ListOrderResponse {
     int64 User = 1;
     repeated ItemOrder Items = 2;
     string Status = 3;
 }
 
-message listOrderRequest {
+message ListOrderRequest {
     int64 OrderID = 1;
 }
 
-message orderPayedRequest {
+message OrderPayedRequest {
     int64 OrderID = 1;
 }
 
-
-message stocksRequest {
+message StocksRequest {
     uint32 SKU = 1;
 }
 
-message itemStock {
+message ItemStock {
     int64 WarehouseID = 1;
     uint64 Count = 2;
 }
 
-message stocksResponse {
-    repeated itemStock Stocks = 1;
+message StocksResponse {
+    repeated ItemStock Stocks = 1;
 
 }
 

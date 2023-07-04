@@ -52,70 +52,76 @@ func (m *Model) checkPtoductReservation(ctx context.Context, item ItemOrder) ([]
 
 func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder) (int64, error) {
 
-	log.Print("CreateOrder ", items)
-	orderID, err := m.DB.WriteOrderUser(ctx, userID)
-	if err != nil {
-		return 0, fmt.Errorf("err in WriteOrderUser err %v", err)
-	}
+	var orderID int64
 
-	err = m.DB.WriteOrderItems(ctx, items, orderID)
-	if err != nil {
-		return 0, fmt.Errorf("err in WriteOrderItems err %v", err)
-	}
+	err := m.DB.RunRepeatableRead(ctx,
+		func(ctxTx context.Context) error {
 
-	err = m.DB.ChangeOrderStatus(ctx, orderID, NewStatus)
-	if err != nil {
-		return 0, fmt.Errorf("err in ChangeOrderStatus err %v", err)
-	}
-
-	var reservedStocks [][]StockInfo
-	for _, item := range items {
-		reservedStock, err := m.checkPtoductReservation(ctx, item)
-		reservedStocks = append(reservedStocks, reservedStock)
-
-		if err != nil {
-
-			err2 := m.DB.ChangeOrderStatus(ctx, orderID, FailedStatus)
-
-			if err2 != nil {
-				return 0, fmt.Errorf("err in ChangeOrderStatus err %v", err2)
+			orderID, err := m.DB.WriteOrder(ctx, items, userID)
+			if err != nil {
+				return fmt.Errorf("err in WriteOrderItems err %v", err)
 			}
 
-			return 0, fmt.Errorf("err in checkPtoductReservation err %v", err)
-		}
-
-	}
-
-	for _, reservedStock := range reservedStocks {
-
-		log.Println("items ", items)
-		log.Println("reservedStock ", reservedStock)
-
-		err = m.DB.ReserveProducts(ctx, orderID, reservedStock)
-
-		if err != nil {
-			err2 := m.DB.ChangeOrderStatus(ctx, orderID, FailedStatus)
-			if err2 != nil {
-				return 0, fmt.Errorf("err in ChangeOrderStatus err %v", err2)
+			err = m.DB.ChangeOrderStatus(ctx, orderID, NewStatus)
+			if err != nil {
+				return fmt.Errorf("err in ChangeOrderStatus err %v", err)
 			}
-			return 0, fmt.Errorf("err in ReserveProducts err %v", err)
-		}
 
-		err = m.DB.MinusAvalibleCount(ctx, reservedStock)
+			var reservedStocks [][]StockInfo
+			for _, item := range items {
+				reservedStock, err := m.checkPtoductReservation(ctx, item)
+				reservedStocks = append(reservedStocks, reservedStock)
 
-		if err != nil {
-			err2 := m.DB.ChangeOrderStatus(ctx, orderID, FailedStatus)
-			if err2 != nil {
-				return 0, fmt.Errorf("err in ChangeOrderStatus err %v", err2)
+				if err != nil {
+
+					err2 := m.DB.ChangeOrderStatus(ctx, orderID, FailedStatus)
+
+					if err2 != nil {
+						return fmt.Errorf("err in ChangeOrderStatus err %v", err2)
+					}
+
+					return fmt.Errorf("err in checkPtoductReservation err %v", err)
+				}
+
 			}
-			return 0, fmt.Errorf("err in MinusAvalibleCount err %v", err)
-		}
 
-	}
+			for _, reservedStock := range reservedStocks {
 
-	err = m.DB.ChangeOrderStatus(ctx, orderID, AwaitingPaymentStatus)
+				log.Println("items ", items)
+				log.Println("reservedStock ", reservedStock)
+
+				err = m.DB.ReserveProducts(ctx, orderID, reservedStock)
+
+				if err != nil {
+					err2 := m.DB.ChangeOrderStatus(ctx, orderID, FailedStatus)
+					if err2 != nil {
+						return fmt.Errorf("err in ChangeOrderStatus err %v", err2)
+					}
+					return fmt.Errorf("err in ReserveProducts err %v", err)
+				}
+
+				err = m.DB.MinusAvalibleCount(ctx, reservedStock)
+
+				if err != nil {
+					err2 := m.DB.ChangeOrderStatus(ctx, orderID, FailedStatus)
+					if err2 != nil {
+						return fmt.Errorf("err in ChangeOrderStatus err %v", err2)
+					}
+					return fmt.Errorf("err in MinusAvalibleCount err %v", err)
+				}
+			}
+
+			err = m.DB.ChangeOrderStatus(ctx, orderID, AwaitingPaymentStatus)
+			if err != nil {
+				return fmt.Errorf("err in ChangeOrderStatus err %v", err)
+			}
+
+			return nil
+
+		})
+
 	if err != nil {
-		return 0, fmt.Errorf("err in ChangeOrderStatus err %v", err)
+		return 0, fmt.Errorf("err in RunRepeatableRead: %w", err)
 	}
 
 	return orderID, err
