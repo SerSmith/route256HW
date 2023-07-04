@@ -8,11 +8,14 @@ import (
 	"sync"
 )
 
-
 const (
 	WORKERS_NUM = 5
 )
 
+var (
+	GetProductUnknownName  = "Unknown"
+	GetProductUnknownPrice = uint32(0)
+)
 
 func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, error) {
 	OrderItems, err := m.DB.GetCartDB(ctx, user)
@@ -25,7 +28,6 @@ func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, e
 
 	wp := workerpool.New(WORKERS_NUM)
 	wg := sync.WaitGroup{}
-
 
 	for _, item := range OrderItems {
 		wg.Add(1)
@@ -52,7 +54,7 @@ func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, e
 		if err != nil{
 			return 0, nil, fmt.Errorf("Error in workerpool ", err)
 		}
-		
+
 	}
 
 	wg.Wait()
@@ -61,13 +63,11 @@ func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, e
 	var totalPrice uint32
 
 	for range OrderItems {
-
-		oneOutCart := <- resChan
+		oneOutCart := <-resChan
 
 		outCart = append(outCart, oneOutCart)
 		totalPrice += oneOutCart.Product.Price * uint32(oneOutCart.Count)
 	}
-
 
 	return totalPrice, outCart, nil
 }

@@ -5,22 +5,22 @@ import (
 	"route256/checkout/pkg/product_service/product_service"
 	"time"
 
+	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"golang.org/x/time/rate"
 )
 
 const (
-wait_time = time.Second * 10
-Limit = 10
-BurstLimit = 10
+	wait_time  = time.Second * 10
+	Limit      = 10
+	BurstLimit = 10
 )
 
 type Client struct {
 	psClient  product_service.ProductServiceClient
 	token     string
 	wait_time time.Duration
-	Limiter *rate.Limiter
+	Limiter   *rate.Limiter
 }
 
 func New(clientUrl string, token string) (*Client, error) {
