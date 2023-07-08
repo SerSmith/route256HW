@@ -2,10 +2,10 @@ package loms
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"route256/checkout/internal/domain"
 	"route256/libs/cliwrapper"
+	"route256/libs/logger"
 )
 
 type ItemOrder struct {
@@ -43,8 +43,8 @@ func (c *Client) CreateOrder(ctx context.Context, user int64, items []domain.Ite
 
 	responseCreateOrder, err := cliwrapper.RequestAPI[RequestCreateOrder, ResponseCreateOrder](ctx, http.MethodGet, c.createOrderURL, requestCreateOrder)
 	if err != nil {
-		log.Printf("loms client, create order: %s", err)
-		log.Printf("createOrderPath: %s", c.createOrderURL)
+		logger.Info("loms client, create order: %s", err)
+		logger.Info("createOrderPath: %s", c.createOrderURL)
 		return 0, err
 	}
 

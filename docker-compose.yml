@@ -67,6 +67,33 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_INT
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       ZOOKEEPER: zookeeper:2181
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alerts.yml:/etc/prometheus/alerts.yml
+    extra_hosts:
+      - host.docker.internal:host-gateway
+  grafana:
+    image: grafana/grafana-oss
+    ports:
+      - 3000:3000
+    volumes:
+      - ./data:/var/lib/grafana
+    links:
+      - prometheus
+  jaeger:
+    image: jaegertracing/all-in-one
+    ports:
+      - 5775:5775/udp
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686 # web
+      - 14268:14268
+      - 9411:9411
   postgres_loms:
     image: postgres:15.1
     environment:
@@ -91,7 +118,6 @@ services:
         limits:
           cpus: '1'
           memory: 4G
-
   postgres_checkout:
     image: postgres:15.1
     environment:
@@ -119,16 +145,22 @@ services:
   checkout:
     image: checkout
     build: ./checkout/
+    environment:
+      PROMETHEUSADDR: ":8001"
     ports:
       - "50051:50051"
+      - "8001:8001"
     depends_on:
       - postgres_checkout
     restart: unless-stopped
   loms:
     image: loms
     build: ./loms/
+    environment:
+      PROMETHEUSADDR: ":8002"
     ports:
       - "50052:50052"
+      - "8002:8002"
     depends_on:
       - postgres_loms
       - kafka1

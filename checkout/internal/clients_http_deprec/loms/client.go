@@ -1,8 +1,8 @@
 package loms
 
 import (
-	"log"
 	"net/url"
+	"route256/libs/logger"
 	"time"
 )
 
@@ -22,7 +22,7 @@ func New(clientUrl string) *Client {
 	stockUrl, _ := url.JoinPath(clientUrl, stockPath)
 
 	createOrderUrl, _ := url.JoinPath(clientUrl, createOrderPath)
-	log.Println("Write", clientUrl, "|", stockUrl, "|", createOrderUrl)
+	logger.Info("Write", clientUrl, "|", stockUrl, "|", createOrderUrl)
 	return &Client{stockURL: stockUrl,
 		createOrderURL: createOrderUrl}
 }

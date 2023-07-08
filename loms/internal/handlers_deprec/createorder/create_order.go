@@ -3,7 +3,7 @@ package createorder
 import (
 	"context"
 	"errors"
-	"log"
+	"route256/libs/logger"
 	"route256/loms/internal/domain"
 )
 
@@ -36,7 +36,7 @@ func (r Request) Validate() error {
 }
 
 func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
-	log.Printf("create order, request: %+v", req)
+	logger.Info("create order, request: %+v", req)
 
 	items := make([]domain.ItemOrder, 0, len(req.Items))
 
@@ -49,7 +49,7 @@ func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
 
 	id, err := h.Model.CreateOrder(ctx, req.User, items)
 	if err != nil {
-		log.Printf("create order: %s", err)
+		logger.Info("create order: %s", err)
 		return Response{}, err
 	}
 	return Response{

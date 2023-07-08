@@ -2,19 +2,24 @@ package domain
 
 import (
 	"context"
-	"fmt"
+	"route256/libs/tracer"
+
+	"github.com/opentracing/opentracing-go"
 )
 
 func (m *Model) ChangeOrderStatusWithNotification(ctx context.Context, orderID int64, newStatus OrderStatus) error {
 
+	span, ctx := opentracing.StartSpanFromContext(ctx, "domain/change_status/ChangeOrderStatusWithNotification")
+	defer span.Finish()
+
 	nowStatus, err := m.DB.GetOrderStatus(ctx, orderID)
 	if err != nil {
-		return fmt.Errorf("GetOrderStatus: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	err = m.DB.ChangeOrderStatus(ctx, orderID, newStatus)
 	if err != nil {
-		return fmt.Errorf("ChangeOrderStatus: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	message := StatusChangeMessage{
@@ -24,7 +29,7 @@ func (m *Model) ChangeOrderStatusWithNotification(ctx context.Context, orderID i
 
 	err = m.KP.SendMessage(message)
 	if err != nil {
-		return fmt.Errorf("sendMessage: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil

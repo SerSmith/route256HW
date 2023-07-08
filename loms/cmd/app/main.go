@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"log"
 	"net"
+	"net/http"
+	"os"
 	"os/signal"
 	"route256/libs/closer"
-	"route256/libs/mw/mylogging"
-	"route256/libs/mw/mypanic"
+	"route256/libs/logger"
+	"route256/libs/metrics/call_counter"
+	"route256/libs/metrics/time_hist"
+	"route256/libs/tracer"
 	"route256/libs/tx"
 	"route256/loms/internal/api/v1"
 	"route256/loms/internal/config"
@@ -20,8 +24,13 @@ import (
 	"syscall"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+)
+
+var (
+	environment = flag.String("environment", "DEVELOPMENT", "environment: [DEVELOPMENT, PRODUCTION]")
 )
 
 const grpcPort = 50052
@@ -31,8 +40,13 @@ func run(ctx context.Context) error {
 	err := config.Init()
 
 	if err != nil {
-		log.Fatalln("error reading config: ", err)
+		logger.Fatalf("error reading config: %s", err)
 	}
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		logger.Fatal(http.ListenAndServe(os.Getenv("PROMETHEUSADDR"), nil))
+	}()
 
 	var closer = new(closer.Closer)
 
@@ -40,7 +54,7 @@ func run(ctx context.Context) error {
 
 	pool, err := pgxpool.Connect(ctx, BDPath)
 	if err != nil {
-		log.Fatalf("connect to db: %s", err)
+		logger.Fatalf("connect to db: %s", err)
 	}
 
 	closer.Add(func(ctx context.Context) error {
@@ -53,7 +67,7 @@ func run(ctx context.Context) error {
 
 	kafkaProducer, err := kafka.NewProducer(config.AppConfig.Kafka.Brokers)
 	if err != nil {
-		log.Fatalf("failed to create kafkaProducer: %v", err)
+		logger.Fatalf("failed to create kafkaProducer: %v", err)
 	}
 
 	ks := sender.NewKafkaSender(kafkaProducer, config.AppConfig.Kafka.TopicStatus)
@@ -64,20 +78,22 @@ func run(ctx context.Context) error {
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logger.Fatalf("failed to listen: %v", err)
 	}
 
 	s := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(mylogging.Interceptor),
-		grpc.ChainUnaryInterceptor(mypanic.Interceptor),
-	)
+		grpc.ChainUnaryInterceptor(logger.MiddlewareGRPC,
+			tracer.MiddlewareGRPC,
+			callCounter.MiddlewareGRPC,
+			timeHist.MiddlewareGRPC))
+
 	reflection.Register(s)
 	desc.RegisterLomsServer(s, serv)
 
-	log.Printf("server listening at %v", lis.Addr())
+	logger.Info("server listening at %v", lis.Addr())
 
 	if err = s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		logger.Fatalf("failed to serve: %v", err)
 	}
 
 	return nil
@@ -88,7 +104,13 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	logger.SetLoggerByEnvironment(*environment)
+
+	if err := tracer.InitGlobal(domain.ServiceName); err != nil {
+		logger.Fatalf("error init tracer: ", err)
+	}
+
 	if err := run(ctx); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 }

@@ -3,12 +3,15 @@ package closer
 import (
 	"context"
 	"fmt"
-	"log"
+	"route256/libs/logger"
 	"sync"
+
+	"route256/libs/tracer"
+	"github.com/opentracing/opentracing-go"
 )
 
 type Closer struct {
-	mu    sync.Mutex
+	mu	sync.Mutex
 	funcs []CloseFunc
 }
 
@@ -22,6 +25,10 @@ func (c *Closer) Add(f CloseFunc) {
 }
 
 func (c *Closer) Close(ctx context.Context) error {
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "closer/Close")
+	defer span.Finish()
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -29,7 +36,7 @@ func (c *Closer) Close(ctx context.Context) error {
 	go func() {
 		for _, f := range c.funcs {
 			if err := f(ctx); err != nil {
-				log.Println(err)
+				logger.Error(err)
 			}
 		}
 
@@ -40,6 +47,6 @@ func (c *Closer) Close(ctx context.Context) error {
 	case <-done:
 		return nil
 	case <-ctx.Done():
-		return fmt.Errorf("shutdown cancelled: %v", ctx.Err())
+		return tracer.MarkSpanWithError(ctx, fmt.Errorf("shutdown cancelled: %v", ctx.Err()))
 	}
 }

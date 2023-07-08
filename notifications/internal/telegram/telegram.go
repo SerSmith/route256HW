@@ -2,9 +2,10 @@ package telegram
 
 import (
 	"context"
-	"fmt"
+	"route256/libs/tracer"
 
 	"github.com/go-telegram/bot"
+	"github.com/opentracing/opentracing-go"
 )
 
 type telegramBot struct {
@@ -13,12 +14,16 @@ type telegramBot struct {
 }
 
 func (t *telegramBot) SendMessage(ctx context.Context, text string) error {
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "telegram/SendMessage")
+	defer span.Finish()
+
 	_, err := t.bot.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: t.reciever_chat_id,
 		Text:   text})
 
 	if err != nil {
-		return fmt.Errorf("t.bot.SendMessage err: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil
@@ -27,10 +32,13 @@ func (t *telegramBot) SendMessage(ctx context.Context, text string) error {
 
 func New(ctx context.Context, token, recieverChatId string) (*telegramBot, error) {
 
+	span, ctx := opentracing.StartSpanFromContext(ctx, "telegram/SendMessage")
+	defer span.Finish()
+
 	myBot, err := bot.New(token)
 
 	if err != nil {
-		return nil, fmt.Errorf("bot.New: %w", err)
+		return nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return &telegramBot{myBot, recieverChatId}, nil

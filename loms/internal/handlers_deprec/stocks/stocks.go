@@ -2,7 +2,7 @@ package stocks
 
 import (
 	"context"
-	"log"
+	"route256/libs/logger"
 	"route256/loms/internal/domain"
 )
 
@@ -29,10 +29,10 @@ func (r Request) Validate() error {
 }
 
 func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
-	log.Printf("stocks, request: %+v", req)
+	logger.Info("stocks, request: %+v", req)
 	stocks, err := h.Model.Stocks(ctx, req.SKU)
 	if err != nil {
-		log.Printf("list stocks: %s", err)
+		logger.Info("list stocks: %s", err)
 		return Response{}, err
 	}
 	respStocks := make([]StockItem, 0, len(stocks))

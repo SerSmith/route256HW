@@ -3,8 +3,8 @@ package purchase
 import (
 	"context"
 	"errors"
-	"log"
 	"route256/checkout/internal/domain"
+	"route256/libs/logger"
 )
 
 type Handler struct {
@@ -31,11 +31,11 @@ func (r Request) Validate() error {
 }
 
 func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
-	log.Printf("purchase, request: %+v", req)
+	logger.Info("purchase, request: %+v", req)
 
 	orderID, err := h.Model.Purchase(ctx, req.User)
 	if err != nil {
-		log.Printf("purchase: %s", err)
+		logger.Info("purchase: %s", err)
 		return Response{}, err
 	}
 

@@ -3,8 +3,8 @@ package listcart
 import (
 	"context"
 	"errors"
-	"log"
 	"route256/checkout/internal/domain"
+	"route256/libs/logger"
 )
 
 type Handler struct {
@@ -42,11 +42,11 @@ func (r Request) Validate() error {
 
 func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
 
-	log.Printf("list cart, request: %+v", req)
+	logger.Info("list cart, request: %+v", req)
 
 	totalPrice, cart, err := h.Model.ListCart(ctx, req.User)
 	if err != nil {
-		log.Printf("list cart: %s", err)
+		logger.Info("list cart: %s", err)
 		return Response{}, err
 	}
 	resp := Response{

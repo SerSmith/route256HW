@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"route256/libs/tracer"
 	"route256/notifications/internal/domain"
 
 	"github.com/Shopify/sarama"
+	"github.com/opentracing/opentracing-go"
 )
 
 type Handler struct {
@@ -19,10 +21,13 @@ func NewHandler(model *domain.Model) *Handler {
 
 func (h *Handler) Notify(ctx context.Context, message *sarama.ConsumerMessage) error {
 
+	span, ctx := opentracing.StartSpanFromContext(ctx, "handler/Notify")
+	defer span.Finish()
+
 	scm := domain.StatusChangeMessage{}
 	err := json.Unmarshal(message.Value, &scm)
 	if err != nil {
-		return fmt.Errorf("Notify json.Unmarshal: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	text := fmt.Sprintf("Order %d, has changed status from %s to %s", scm.OrderID, string(scm.OldStatus), string(scm.NewStatus))
@@ -30,7 +35,7 @@ func (h *Handler) Notify(ctx context.Context, message *sarama.ConsumerMessage) e
 	err = h.model.Messenger.SendMessage(ctx, text)
 
 	if err != nil {
-		return fmt.Errorf("Notify r.model.Messenger.SendMessage: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil

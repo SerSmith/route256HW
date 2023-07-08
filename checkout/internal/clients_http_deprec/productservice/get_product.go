@@ -2,10 +2,10 @@ package productservice
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"route256/checkout/internal/domain"
 	"route256/libs/cliwrapper"
+	"route256/libs/logger"
 )
 
 type GetProductRequest struct {
@@ -29,7 +29,7 @@ func (c *Client) GetProduct(ctx context.Context, sku uint32) (domain.Product, er
 
 	productResponse, err := cliwrapper.RequestAPI[GetProductRequest, GetProductResponse](ctx, http.MethodPost, c.productPath, productRequest)
 	if err != nil {
-		log.Printf("product service client, get product: %s", err)
+		logger.Info("product service client, get product: %s", err)
 		return domain.Product{}, err
 	}
 

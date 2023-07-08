@@ -9,7 +9,7 @@ build-all:
 
 run-all: build-all
 	sudo docker compose up --force-recreate --build -d
-	sleep 3
+	sleep 10
 	cd checkout && make goose-up
 	cd loms && make goose-up
 

@@ -2,6 +2,8 @@ package domain
 
 import "context"
 
+const ServiceName = "Loms"
+
 type Sender interface {
 	SendAsyncMessage(message StatusChangeMessage) error
 	SendMessage(message StatusChangeMessage) error

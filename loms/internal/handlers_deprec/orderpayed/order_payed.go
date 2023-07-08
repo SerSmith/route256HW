@@ -3,7 +3,7 @@ package orderpayed
 import (
 	"context"
 	"errors"
-	"log"
+	"route256/libs/logger"
 	"route256/loms/internal/domain"
 )
 
@@ -29,7 +29,7 @@ func (r Request) Validate() error {
 }
 
 func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
-	log.Printf("order payed, request: %+v", req)
+	logger.Info("order payed, request: %+v", req)
 	err := h.Model.OrderPayed(ctx, req.OrderID)
 	return Response{}, err
 }

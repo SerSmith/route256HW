@@ -2,12 +2,17 @@ package productservice
 
 import (
 	"context"
-	"fmt"
 	"route256/checkout/internal/domain"
 	"route256/checkout/pkg/product_service/product_service"
+	"route256/libs/tracer"
+
+	"github.com/opentracing/opentracing-go"
 )
 
 func (c *Client) GetProduct(ctx context.Context, sku uint32) (*domain.Product, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "clients/productservice/get_product/GetProduct")
+	defer span.Finish()
+
 	_, cancel := context.WithTimeout(context.Background(), c.wait_time)
 	defer cancel()
 
@@ -22,7 +27,7 @@ func (c *Client) GetProduct(ctx context.Context, sku uint32) (*domain.Product, e
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("send getProduct request: %w", err)
+		return nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	response := &domain.Product{Name: response_from_api.GetName(), Price: response_from_api.GetPrice()}

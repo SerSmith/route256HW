@@ -3,7 +3,7 @@ package kafka
 import (
 	"context"
 	"fmt"
-	"log"
+	"route256/libs/logger"
 	"route256/notifications/internal/config"
 	"time"
 
@@ -47,7 +47,7 @@ func (consumer *ConsumerGroup) ConsumeClaim(session sarama.ConsumerGroupSession,
 			err := consumer.Handle(session.Context(), message)
 
 			if err != nil {
-				log.Printf("ERROR in ConsumeClaim.handle: %s", err)
+				logger.Info("ERROR in ConsumeClaim.handle: %s", err)
 			}
 
 			// коммит сообщения "руками"

@@ -2,15 +2,17 @@ package postgres
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"route256/checkout/internal/converter/schema2domain"
 	"route256/checkout/internal/domain"
 	"route256/checkout/internal/repository/schema"
+	"route256/libs/logger"
+	"route256/libs/tracer"
 	"route256/libs/tx"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 )
 
 var psql = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
@@ -28,6 +30,8 @@ const (
 )
 
 func (r *Repository) AddToCartDB(ctx context.Context, user int64, sku uint32, count uint16) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/AddToCartDB")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 	query := `INSERT INTO cart (user_id, sku, "count") VALUES 
@@ -38,13 +42,16 @@ ON CONFLICT (user_id, sku) DO UPDATE
 	_, err := db.Exec(ctx, query, user, sku, count)
 
 	if err != nil {
-		return fmt.Errorf("exec insert stocks: %v", err)
+		return tracer.MarkSpanWithError(ctx, errors.Wrap(err, "exec insert stocks"))
 	}
 
 	return nil
 }
 
 func (r *Repository) DeleteFromCartDB(ctx context.Context, user int64, sku uint32, count uint16) error {
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/DeleteFromCartDB")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 
@@ -55,7 +62,7 @@ func (r *Repository) DeleteFromCartDB(ctx context.Context, user int64, sku uint3
 	_, err := db.Exec(ctx, query, user, sku, count)
 
 	if err != nil {
-		return fmt.Errorf("exec insert stocks: %v", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	query = `DELETE
@@ -65,13 +72,16 @@ func (r *Repository) DeleteFromCartDB(ctx context.Context, user int64, sku uint3
 	_, err = db.Exec(ctx, query)
 
 	if err != nil {
-		return fmt.Errorf("delete 0 rows: %v", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil
 }
 
 func (r *Repository) GetCartQauntDB(ctx context.Context, user int64, sku uint32) (uint16, error) {
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/GetCartQauntDB")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 
@@ -81,7 +91,7 @@ func (r *Repository) GetCartQauntDB(ctx context.Context, user int64, sku uint32)
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return 0, fmt.Errorf("build query for ReservePtoduct get: %s", err)
+		return 0, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var count []uint16
@@ -93,13 +103,16 @@ func (r *Repository) GetCartQauntDB(ctx context.Context, user int64, sku uint32)
 	}
 
 	if err != nil {
-		return 0, fmt.Errorf("exec for ReservePtoduct get: %w", err)
+		return 0, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return count[0], nil
 }
 
 func (r *Repository) GetCartDB(ctx context.Context, user int64) ([]domain.ItemOrder, error) {
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/GetCartDB")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 
@@ -109,14 +122,14 @@ func (r *Repository) GetCartDB(ctx context.Context, user int64) ([]domain.ItemOr
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("build query for ReservePtoduct get: %s", err)
+		return nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var itemsInCartSchema []schema.ItemOrder
 	err = pgxscan.Select(ctx, db, &itemsInCartSchema, rawSQL, args...)
 
 	if err != nil {
-		return nil, fmt.Errorf("exec for ReservePtoduct get: %w", err)
+		return nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var itemsInCart []domain.ItemOrder
@@ -129,6 +142,9 @@ func (r *Repository) GetCartDB(ctx context.Context, user int64) ([]domain.ItemOr
 }
 
 func (r *Repository) WipeCartDB(ctx context.Context, user int64) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/WipeCartDB")
+	defer span.Finish()
+
 	db := r.provider.GetDB(ctx)
 
 	query := psql.Delete(tableCart).
@@ -136,15 +152,15 @@ func (r *Repository) WipeCartDB(ctx context.Context, user int64) error {
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return fmt.Errorf("build query for WipeCartDB get: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
-	log.Print(rawSQL, " ", args)
+	logger.Info(rawSQL, " ", args)
 
 	_, err = db.Exec(ctx, rawSQL, args...)
 
 	if err != nil {
-		return fmt.Errorf("exec for ReservePtoduct get: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil

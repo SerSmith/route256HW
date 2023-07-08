@@ -1,8 +1,8 @@
 package productservice
 
 import (
-	"log"
 	"route256/checkout/pkg/product_service/product_service"
+	"route256/libs/logger"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -26,7 +26,7 @@ type Client struct {
 func New(clientUrl string, token string) (*Client, error) {
 	conn, err := grpc.Dial(clientUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("failed to connect to server: %v", err)
+		logger.Fatalf("failed to connect to server: %v", err)
 	}
 
 	MyLimiter := rate.NewLimiter(rate.Limit(Limit), BurstLimit)

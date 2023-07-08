@@ -2,7 +2,7 @@ package reciever
 
 import (
 	"context"
-	"log"
+	"route256/libs/logger"
 	"route256/notifications/internal/handler"
 	"route256/notifications/internal/infrastructure/kafka"
 	"sync"
@@ -41,7 +41,7 @@ func (r *KafkaReceiver) Subscribe(ctx context.Context, kafkaClient sarama.Consum
 			// recreated to get the new claims
 
 			if err := kafkaClient.Consume(ctx, []string{topic}, r.consumer); err != nil {
-				log.Panicf("Error from consumer: %v", err)
+				logger.Fatalf("Error from consumer: %v", err)
 			}
 
 			// check if context was cancelled, signaling that the consumer should stop
