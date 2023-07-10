@@ -52,7 +52,7 @@ func (m *Model) checkPtoductReservation(ctx context.Context, item ItemOrder) ([]
 
 func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder) (int64, error) {
 
-	var OrderID int64
+	var orderID int64
 
 	err := m.DB.RunRepeatableRead(ctx,
 		func(ctxTx context.Context) error {

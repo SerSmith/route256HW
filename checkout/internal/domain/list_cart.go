@@ -33,25 +33,26 @@ func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, e
 		wg.Add(1)
 		NowItem := item
 		err := wp.Run(ctx,
-			func(ctx context.Context) {
-				defer wg.Done()
+							func (ctx context.Context){
+								defer wg.Done()
 
-				product, err := m.productServiceClient.GetProduct(ctx, NowItem.SKU)
+								product, err := m.productServiceClient.GetProduct(ctx, NowItem.SKU)
 
-				if err != nil {
-					log.Print("err in runOmeGetProductInstance %w", err)
-					product = &Product{Name: GetProductUnknownName,
-						Price: GetProductUnknownPrice}
-				}
+								if err != nil {
+									log.Print("err in runOmeGetProductInstance ", err)
+									product = &Product{
+										Name:	"Unknown",
+										Price:	0,
+									}
+								}
 
-				resChan <- ItemCart{
-					SKU:     NowItem.SKU,
-					Product: *product,
-					Count:   NowItem.Count,
-				}
-			})
-		if err != nil {
-			return 0, nil, fmt.Errorf("Error in workerpool %w", err)
+								resChan <- ItemCart{
+									SKU:     NowItem.SKU,
+									Product: *product,
+									Count: NowItem.Count,
+								}})
+		if err != nil{
+			return 0, nil, fmt.Errorf("Error in workerpool ", err)
 		}
 
 	}
