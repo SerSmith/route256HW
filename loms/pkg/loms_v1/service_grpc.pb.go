@@ -8,6 +8,7 @@ package loms_v1
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -20,11 +21,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Loms_CancelOrder_FullMethodName = "/Loms/CancelOrder"
-	Loms_CreateOrder_FullMethodName = "/Loms/CreateOrder"
-	Loms_ListOrder_FullMethodName   = "/Loms/ListOrder"
-	Loms_OrderPayed_FullMethodName  = "/Loms/OrderPayed"
-	Loms_Stocks_FullMethodName      = "/Loms/Stocks"
+	Loms_CancelOrder_FullMethodName = "/loms.Loms/CancelOrder"
+	Loms_CreateOrder_FullMethodName = "/loms.Loms/CreateOrder"
+	Loms_ListOrder_FullMethodName   = "/loms.Loms/ListOrder"
+	Loms_OrderPayed_FullMethodName  = "/loms.Loms/OrderPayed"
+	Loms_Stocks_FullMethodName      = "/loms.Loms/Stocks"
 )
 
 // LomsClient is the client API for Loms service.
@@ -229,7 +230,7 @@ func _Loms_Stocks_Handler(srv interface{}, ctx context.Context, dec func(interfa
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Loms_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Loms",
+	ServiceName: "loms.Loms",
 	HandlerType: (*LomsServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

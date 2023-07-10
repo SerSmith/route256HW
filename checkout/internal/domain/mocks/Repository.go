@@ -92,6 +92,34 @@ func (_m *Repository) GetCartQauntDB(ctx context.Context, user int64, sku uint32
 	return r0, r1
 }
 
+// RunRepeatableRead provides a mock function with given fields: ctx, fn
+func (_m *Repository) RunRepeatableRead(ctx context.Context, fn func(context.Context) error) error {
+	ret := _m.Called(ctx, fn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, func(context.Context) error) error); ok {
+		r0 = rf(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// WipeCartDB provides a mock function with given fields: ctx, user
+func (_m *Repository) WipeCartDB(ctx context.Context, user int64) error {
+	ret := _m.Called(ctx, user)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) error); ok {
+		r0 = rf(ctx, user)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // NewRepository creates a new instance of Repository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewRepository(t interface {

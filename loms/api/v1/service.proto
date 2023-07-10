@@ -1,6 +1,6 @@
-package loms;
-
 syntax = 'proto3';
+
+package loms;
 
 option go_package = "https://gitlab.ozon.dev/sykuznetsov/homework-1/checkout/pkg/loms_v1";
 
@@ -13,7 +13,6 @@ rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
 rpc ListOrder(ListOrderRequest) returns (ListOrderResponse);
 rpc OrderPayed(OrderPayedRequest) returns (google.protobuf.Empty);
 rpc Stocks(StocksRequest) returns (StocksResponse);
-
 }
 
 message ItemOrder {

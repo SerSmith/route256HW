@@ -36,9 +36,9 @@ func (m *Model) CancelOrder(ctx context.Context, orderID int64) error {
 				log.Fatalf("UnreserveProducts: %s", err)
 			}
 
-			err = m.DB.ChangeOrderStatus(ctx, orderID, CanceledStatus)
+			err = m.ChangeOrderStatusWithNotification(ctx, orderID, CanceledStatus)
 			if err != nil {
-				log.Fatalf("ChangeOrderStatus: %s", err)
+				log.Fatalf("ChangeOrderStatusWithNotification: %s", err)
 			}
 
 			return nil
