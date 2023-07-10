@@ -60,7 +60,7 @@ func newSyncProducer(brokers []string) (sarama.SyncProducer, error) {
 		- одинаковые ключи в одной партиции
 		- при cleanup.policy = compact останется только последнее сообщение по этому ключу
 	*/
-	syncProducerConfig.Producer.Partitioner = sarama.NewRandomPartitioner
+	syncProducerConfig.Producer.Partitioner = sarama.NewHashPartitioner
 
 	syncProducerConfig.Producer.RequiredAcks = sarama.WaitForAll
 
