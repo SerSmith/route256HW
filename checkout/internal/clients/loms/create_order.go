@@ -5,18 +5,13 @@ import (
 	"route256/checkout/internal/domain"
 	"route256/checkout/pkg/loms/loms"
 	"route256/libs/tracer"
-
-	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 )
 
 func (c *Client) CreateOrder(ctx context.Context, userID int64, items []domain.ItemOrder) (int64, error) {
 	_, cancel := context.WithTimeout(context.Background(), c.wait_time)
-	span, ctx := opentracing.StartSpanFromContext(ctx, "main")
-	defer func() {
-		cancel()
-		span.Finish()
-	}()
+
+	defer cancel()
 
 	var Items_for_req []*loms_v1.ItemOrder
 
@@ -35,7 +30,7 @@ func (c *Client) CreateOrder(ctx context.Context, userID int64, items []domain.I
 	resp, err := c.loms.CreateOrder(ctx, req)
 
 	if err != nil {
-		return 0, tracer.MarkSpanWithError(ctx, errors.Wrap(err, "purchase"))
+		return 0, tracer.MarkSpanWithError(ctx, errors.Wrap(err, "CreateOrder"))
 	}
 
 	return resp.GetOrderID(), nil

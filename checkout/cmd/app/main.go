@@ -43,9 +43,6 @@ var (
 
 func run(ctx context.Context) error {
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "main")
-	defer span.Finish()
-
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
 		logger.Fatal(http.ListenAndServe(os.Getenv("PROMETHEUSADDR"), nil))
