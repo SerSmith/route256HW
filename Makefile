@@ -12,6 +12,7 @@ run-all: build-all
 	sleep 10
 	cd checkout && make goose-up
 	cd loms && make goose-up
+	cd notifications && make goose-up
 
 
 precommit:

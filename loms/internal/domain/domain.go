@@ -18,6 +18,7 @@ type Repository interface {
 	GetAvailableBySku(ctx context.Context, sku uint32) ([]Stock, error)
 	ChangeOrderStatus(ctx context.Context, orderID int64, Status OrderStatus) error
 	GetOrderStatus(ctx context.Context, orderID int64) (OrderStatus, error)
+	GetOrderUser(ctx context.Context, orderID int64) (int64, error)
 	GetOrderDetails(ctx context.Context, orderID int64) (Order, error)
 	UnreserveProducts(ctx context.Context, orderID int64) error
 	BuyProducts(ctx context.Context, stocks []StockInfo) error
@@ -67,6 +68,7 @@ type StatusChangeMessage struct {
 	OldStatus string
 	NewStatus string
 	OrderID   int64
+	UserID    int64
 }
 
 func New(DB Repository, KP Sender) *Model {

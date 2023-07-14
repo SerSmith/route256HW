@@ -1,4 +1,4 @@
-package handler
+package grpcHandler
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"route256/libs/tracer"
 	"route256/notifications/internal/domain"
+	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/opentracing/opentracing-go"
@@ -33,6 +34,12 @@ func (h *Handler) Notify(ctx context.Context, message *sarama.ConsumerMessage) e
 	text := fmt.Sprintf("Order %d, has changed status from %s to %s", scm.OrderID, string(scm.OldStatus), string(scm.NewStatus))
 
 	err = h.model.Messenger.SendMessage(ctx, text)
+
+	if err != nil {
+		return tracer.MarkSpanWithError(ctx, err)
+	}
+
+	err = h.model.Repository.WriteNotification(ctx, scm, time.Now())
 
 	if err != nil {
 		return tracer.MarkSpanWithError(ctx, err)
