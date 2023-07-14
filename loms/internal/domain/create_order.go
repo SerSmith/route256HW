@@ -60,7 +60,7 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 	span, ctx := opentracing.StartSpanFromContext(ctx, "domain/create_oeder/CreateOrder")
 	defer span.Finish()
 
-	var OrderID int64
+	var orderID int64
 
 	err := m.DB.RunRepeatableRead(ctx,
 		func(ctxTx context.Context) error {

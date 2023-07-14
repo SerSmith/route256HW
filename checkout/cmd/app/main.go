@@ -23,7 +23,6 @@ import (
 	"route256/libs/tx"
 	"syscall"
 	"time"
-
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -31,6 +30,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
+
+
 
 const (
 	grpcPort        = 50051
@@ -74,9 +75,8 @@ func run(ctx context.Context) error {
 
 	var closer = new(closer.Closer)
 
-	// "postgres://user:password@postgres_checkout:5433/checkout?sslmode=disable"
-
 	BDPath := config.AppConfig.DSN()
+
 	pool, err := pgxpool.Connect(ctx, BDPath)
 	if err != nil {
 		logger.Fatalf("connect to db: %s", err)
