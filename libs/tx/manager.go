@@ -2,12 +2,14 @@ package tx
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"route256/libs/logger"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+
+	"route256/libs/tracer"
+	"github.com/opentracing/opentracing-go"
 )
 
 var txKey = struct{}{}
@@ -32,27 +34,31 @@ type Querier interface {
 }
 
 func (m *Manager) RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error {
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "libs/tx")
+	defer span.Finish()
+
 	tx, err := m.pool.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.RepeatableRead,
 	})
 	if err != nil {
-		return fmt.Errorf("start tx: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 	defer func() {
 		err = tx.Rollback(ctx)
 
 		if err != nil {
-			log.Println("Rollback: ", err)
+			logger.Info("Rollback: ", err)
 		}
 	}()
 
 	ctxTx := context.WithValue(ctx, txKey, tx)
 	if err = fn(ctxTx); err != nil {
-		return fmt.Errorf("exec body: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return fmt.Errorf("commit tx: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil

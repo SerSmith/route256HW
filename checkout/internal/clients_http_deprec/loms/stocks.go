@@ -2,10 +2,10 @@ package loms
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"route256/checkout/internal/domain"
 	"route256/libs/cliwrapper"
+	"route256/libs/logger"
 )
 
 type StocksRequest struct {
@@ -27,8 +27,8 @@ func (c *Client) Stocks(ctx context.Context, sku uint32) ([]domain.Stock, error)
 
 	responseStocks, err := cliwrapper.RequestAPI[StocksRequest, StocksResponse](ctx, http.MethodGet, c.stockURL, requestStocks)
 	if err != nil {
-		log.Printf("loms client, get stocks: %s", err)
-		log.Printf("stockURL: %s", c.stockURL)
+		logger.Info("loms client, get stocks: %s", err)
+		logger.Info("stockURL: %s", c.stockURL)
 		return nil, err
 	}
 	result := make([]domain.Stock, 0, len(responseStocks.Stocks))

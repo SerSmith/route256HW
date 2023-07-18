@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
-	"log"
+	"flag"
 	"os/signal"
+	"route256/libs/logger"
+	"route256/libs/tracer"
 	"route256/notifications/internal/config"
 	configApp "route256/notifications/internal/config"
 	"route256/notifications/internal/domain"
@@ -14,23 +16,33 @@ import (
 	"syscall"
 )
 
+var (
+	environment = flag.String("environment", "DEVELOPMENT", "environment: [DEVELOPMENT, PRODUCTION]")
+)
+
 func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	logger.SetLoggerByEnvironment(*environment)
+
+	if err := tracer.InitGlobal(domain.ServiceName); err != nil {
+		logger.Fatalf("error init tracer: ", err)
+	}
+
 	err := configApp.Init()
 
 	if err != nil {
-		log.Fatalln("error reading config: ", err)
+		logger.Fatalf("error reading config: ", err)
 	}
 
-	log.Println("Config of APP: ", config.AppConfig)
+	logger.Info("Config of APP: ", config.AppConfig)
 
 	s, err := telegram.New(ctx, configApp.AppConfig.Telegram.Token, configApp.AppConfig.Telegram.Reciever_chat_id)
 
 	if err != nil {
-		log.Fatalln("error telegram.New: ", err)
+		logger.Fatalf("error telegram.New: ", err)
 	}
 
 	m := domain.New(ctx, s)
@@ -38,12 +50,12 @@ func main() {
 	consumerGroup, err := kafka.ConcumerGroupRun(configApp.AppConfig)
 
 	if err != nil {
-		log.Fatalln("error in NewKafkaConsumerFromConfig: %w", err)
+		logger.Fatalf("error in NewKafkaConsumerFromConfig: %w", err)
 	}
 
 	defer func() {
 		if err = consumerGroup.Close(); err != nil {
-			log.Fatalln("Error in consumerGroup.Close(): %w", err)
+			logger.Fatalf("Error in consumerGroup.Close(): %w", err)
 		}
 	}()
 
@@ -54,7 +66,7 @@ func main() {
 	err = res.Subscribe(ctx, consumerGroup, configApp.AppConfig.Kafka.TopicStatus)
 
 	if err != nil {
-		log.Fatalln("Error in res.Subscribe: %w", err)
+		logger.Fatalf("Error in res.Subscribe: %w", err)
 	}
 
 }

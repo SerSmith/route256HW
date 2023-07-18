@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"log"
+	"route256/libs/logger"
 	"net/http"
 )
 
@@ -52,7 +52,7 @@ func (w *Wrapper[Req, Res]) ServeHTTP(resWriter http.ResponseWriter, httpReq *ht
 
 	resp, err := w.fn(httpReq.Context(), req)
 	if err != nil {
-		log.Printf("executor fail: %s", err)
+		logger.Info("executor fail: %s", err)
 		resWriter.WriteHeader(http.StatusInternalServerError)
 		writeErrorText(resWriter, "exec handler", err)
 		return

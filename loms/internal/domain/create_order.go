@@ -3,16 +3,22 @@ package domain
 import (
 	"context"
 	"fmt"
-	"log"
+	"route256/libs/logger"
+	"route256/libs/tracer"
+
+	"github.com/opentracing/opentracing-go"
 )
 
 func (m *Model) checkPtoductReservation(ctx context.Context, item ItemOrder) ([]StockInfo, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "domain/create_oeder/checkPtoductReservation")
+	defer span.Finish()
+
 	countNotReserved := uint64(item.Count)
 
 	stocksFound, err := m.DB.GetAvailableBySku(ctx, item.SKU)
 
 	if err != nil {
-		return nil, fmt.Errorf("err in GetAvailableBySku: %v", err)
+		return nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var new_reservedStocks []StockInfo
@@ -23,8 +29,8 @@ func (m *Model) checkPtoductReservation(ctx context.Context, item ItemOrder) ([]
 			break
 		}
 
-		log.Println("stock.Count ", stock.Count)
-		log.Println("countNotReserved", countNotReserved)
+		logger.Info("stock.Count ", stock.Count)
+		logger.Info("countNotReserved", countNotReserved)
 
 		var countReserved uint64
 		if stock.Count >= countNotReserved {
@@ -44,13 +50,15 @@ func (m *Model) checkPtoductReservation(ctx context.Context, item ItemOrder) ([]
 
 	/* Если не смогли найти достаточно товаров */
 	if countNotReserved > 0 {
-		return nil, fmt.Errorf("Could not reserve enough for sku %d", item.SKU)
+		return nil, tracer.MarkSpanWithError(ctx, fmt.Errorf("Could not reserve enough for sku %v", item.SKU))
 	}
 
 	return new_reservedStocks, nil
 }
 
 func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder) (int64, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "domain/create_oeder/CreateOrder")
+	defer span.Finish()
 
 	var orderID int64
 
@@ -61,12 +69,12 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 
 			OrderID = OrderID_
 			if err != nil {
-				return fmt.Errorf("err in WriteOrderItems err %v", err)
+				return tracer.MarkSpanWithError(ctx, err)
 			}
 
 			err = m.ChangeOrderStatusWithNotification(ctx, OrderID, NewStatus)
 			if err != nil {
-				return fmt.Errorf("err in ChangeOrderStatus err %v", err)
+				return tracer.MarkSpanWithError(ctx, err)
 			}
 
 			var reservedStocks [][]StockInfo
@@ -79,10 +87,10 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 					err2 := m.ChangeOrderStatusWithNotification(ctx, OrderID, FailedStatus)
 
 					if err2 != nil {
-						return fmt.Errorf("err in ChangeOrderStatus err %v", err2)
+						return tracer.MarkSpanWithError(ctx, err2)
 					}
 
-					return fmt.Errorf("err in checkPtoductReservation err %v", err)
+					return tracer.MarkSpanWithError(ctx, err)
 				}
 
 			}
@@ -94,9 +102,9 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 				if err != nil {
 					err2 := m.ChangeOrderStatusWithNotification(ctx, OrderID, FailedStatus)
 					if err2 != nil {
-						return fmt.Errorf("err in ChangeOrderStatus err %v", err2)
+						return tracer.MarkSpanWithError(ctx, err2)
 					}
-					return fmt.Errorf("err in ReserveProducts err %v", err)
+					return tracer.MarkSpanWithError(ctx, err)
 				}
 
 				err = m.DB.MinusAvalibleCount(ctx, reservedStock)
@@ -104,15 +112,15 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 				if err != nil {
 					err2 := m.ChangeOrderStatusWithNotification(ctx, OrderID, FailedStatus)
 					if err2 != nil {
-						return fmt.Errorf("err in ChangeOrderStatus err %v", err2)
+						return tracer.MarkSpanWithError(ctx, err2)
 					}
-					return fmt.Errorf("err in MinusAvalibleCount err %v", err)
+					return tracer.MarkSpanWithError(ctx, err)
 				}
 			}
 
 			err = m.ChangeOrderStatusWithNotification(ctx, OrderID, AwaitingPaymentStatus)
 			if err != nil {
-				return fmt.Errorf("err in ChangeOrderStatus err %v", err)
+				return tracer.MarkSpanWithError(ctx, err)
 			}
 
 			return nil
@@ -120,7 +128,7 @@ func (m *Model) CreateOrder(ctx context.Context, userID int64, items []ItemOrder
 		})
 
 	if err != nil {
-		return 0, fmt.Errorf("err in RunRepeatableRead: %w", err)
+		return 0, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return OrderID, err

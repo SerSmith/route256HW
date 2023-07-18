@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"route256/libs/tracer"
 	"route256/libs/tx"
 	"route256/loms/internal/converter/schema2domain"
 	"route256/loms/internal/domain"
@@ -10,6 +11,7 @@ import (
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/pgxscan"
+	"github.com/opentracing/opentracing-go"
 )
 
 var psql = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
@@ -31,6 +33,10 @@ const (
 )
 
 func (r *Repository) WriteOrder(ctx context.Context, items []domain.ItemOrder, User int64) (int64, error) {
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/WriteOrder")
+	defer span.Finish()
+
 	db := r.provider.GetDB(ctx)
 
 	query := psql.Insert(tableNameOrders).Columns("user_id", "SKU", "Count").Suffix("RETURNING orderid")
@@ -43,19 +49,22 @@ func (r *Repository) WriteOrder(ctx context.Context, items []domain.ItemOrder, U
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return 0, fmt.Errorf("build query for create order: %s", err)
+		return 0, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var orderID int64
 	err = db.QueryRow(ctx, rawSQL, args...).Scan(&orderID)
 	if err != nil {
-		return 0, fmt.Errorf("exec insert order: %w", err)
+		return 0, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return orderID, nil
 }
 
 func (r *Repository) ChangeOrderStatus(ctx context.Context, orderID int64, Status domain.OrderStatus) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/ChangeOrderStatus")
+	defer span.Finish()
+
 	db := r.provider.GetDB(ctx)
 
 	query := fmt.Sprintf(`INSERT INTO OrdersStatus (orderID, Status) VALUES 
@@ -70,7 +79,7 @@ func (r *Repository) ChangeOrderStatus(ctx context.Context, orderID int64, Statu
 	err := db.QueryRow(ctx, query).Scan(&out)
 
 	if err != nil {
-		return fmt.Errorf("exec insert order: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil
@@ -78,6 +87,9 @@ func (r *Repository) ChangeOrderStatus(ctx context.Context, orderID int64, Statu
 }
 
 func (r *Repository) ReserveProducts(ctx context.Context, orderID int64, stockInfos []domain.StockInfo) error {
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/ReserveProducts")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 
@@ -91,18 +103,20 @@ func (r *Repository) ReserveProducts(ctx context.Context, orderID int64, stockIn
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return fmt.Errorf("build query for ReserveProducts: %s", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	_, err = db.Exec(ctx, rawSQL, args...)
 	if err != nil {
-		return fmt.Errorf("exec ReserveProducts: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil
 }
 
 func (r *Repository) UnreserveProducts(ctx context.Context, orderID int64) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/UnreserveProducts")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 
@@ -111,18 +125,20 @@ func (r *Repository) UnreserveProducts(ctx context.Context, orderID int64) error
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return fmt.Errorf("build query for ReserveProducts: %s", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	_, err = db.Query(ctx, rawSQL, args...)
 	if err != nil {
-		return fmt.Errorf("exec ReserveProducts: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil
 }
 
 func (r *Repository) BuyProducts(ctx context.Context, stocks []domain.StockInfo) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/BuyProducts")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 
@@ -136,18 +152,20 @@ func (r *Repository) BuyProducts(ctx context.Context, stocks []domain.StockInfo)
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return fmt.Errorf("build query for ReserveProducts: %s", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	_, err = db.Exec(ctx, rawSQL, args...)
 	if err != nil {
-		return fmt.Errorf("exec ReserveProducts: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
 	return nil
 }
 
 func (r *Repository) MinusAvalibleCount(ctx context.Context, stockInfos []domain.StockInfo) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/MinusAvalibleCount")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 
@@ -161,7 +179,7 @@ ON CONFLICT (sku, warehouseID) DO UPDATE
 		_, err := db.Exec(ctx, query, stockInfo.SKU, stockInfo.WarehouseID, stockInfo.Count)
 
 		if err != nil {
-			return fmt.Errorf("exec insert stocks: %v", err)
+			return tracer.MarkSpanWithError(ctx, err)
 		}
 
 	}
@@ -170,6 +188,8 @@ ON CONFLICT (sku, warehouseID) DO UPDATE
 }
 
 func (r *Repository) PlusAvalibleCount(ctx context.Context, stockInfos []domain.StockInfo) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/PlusAvalibleCount")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 	query := `INSERT INTO StocksAvalible (sku, warehouseID, "count") VALUES 
@@ -182,7 +202,7 @@ ON CONFLICT (sku, warehouseID) DO UPDATE
 		_, err := db.Exec(ctx, query, stockInfo.SKU, stockInfo.WarehouseID, stockInfo.Count)
 
 		if err != nil {
-			return fmt.Errorf("exec insert stocks: %v", err)
+			return tracer.MarkSpanWithError(ctx, err)
 		}
 
 	}
@@ -191,6 +211,9 @@ ON CONFLICT (sku, warehouseID) DO UPDATE
 }
 
 func (r *Repository) GetAvailableBySku(ctx context.Context, sku uint32) ([]domain.Stock, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/GetAvailableBySku")
+	defer span.Finish()
+
 	db := r.provider.GetDB(ctx)
 
 	query := psql.Select("WarehouseID", "Count").
@@ -199,14 +222,14 @@ func (r *Repository) GetAvailableBySku(ctx context.Context, sku uint32) ([]domai
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("build query for ReservePtoduct get: %s", err)
+		return nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var stocksFoundSchema []schema.Stock
 	err = pgxscan.Select(ctx, db, &stocksFoundSchema, rawSQL, args...)
 
 	if err != nil {
-		return nil, fmt.Errorf("exec for ReservePtoduct get: %w", err)
+		return nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var stocksFound []domain.Stock
@@ -219,6 +242,9 @@ func (r *Repository) GetAvailableBySku(ctx context.Context, sku uint32) ([]domai
 }
 
 func (r *Repository) GetReservedByOrderID(ctx context.Context, orderID int64) ([]domain.StockInfo, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/GetReservedByOrderID")
+	defer span.Finish()
+
 	db := r.provider.GetDB(ctx)
 
 	query := psql.Select("sku", "WarehouseID", "Count").
@@ -227,14 +253,14 @@ func (r *Repository) GetReservedByOrderID(ctx context.Context, orderID int64) ([
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("build query for ReservePtoduct get: %s", err)
+		return nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var stocksSchema []schema.StockInfo
 	err = pgxscan.Select(ctx, db, &stocksSchema, rawSQL, args...)
 
 	if err != nil {
-		return nil, fmt.Errorf("exec for ReservePtoduct get: %w", err)
+		return nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var stocks []domain.StockInfo
@@ -247,6 +273,8 @@ func (r *Repository) GetReservedByOrderID(ctx context.Context, orderID int64) ([
 }
 
 func (r *Repository) GetOrderDetails(ctx context.Context, orderID int64) (domain.Order, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/GetOrderDetails")
+	defer span.Finish()
 
 	db := r.provider.GetDB(ctx)
 
@@ -256,14 +284,14 @@ func (r *Repository) GetOrderDetails(ctx context.Context, orderID int64) (domain
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return domain.Order{}, fmt.Errorf("build query for ReservePtoduct get: %s", err)
+		return domain.Order{}, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var status []domain.OrderStatus
 	err = pgxscan.Select(ctx, db, &status, rawSQL, args...)
 
 	if err != nil {
-		return domain.Order{}, fmt.Errorf("exec for ReservePtoduct get: %w", err)
+		return domain.Order{}, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	query = psql.Select("user_id").
@@ -272,14 +300,14 @@ func (r *Repository) GetOrderDetails(ctx context.Context, orderID int64) (domain
 
 	rawSQL, args, err = query.ToSql()
 	if err != nil {
-		return domain.Order{}, fmt.Errorf("build query for ReservePtoduct get: %s", err)
+		return domain.Order{}, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var userID []int64
 	err = pgxscan.Select(ctx, db, &userID, rawSQL, args...)
 
 	if err != nil {
-		return domain.Order{}, fmt.Errorf("exec for ReservePtoduct get: %w", err)
+		return domain.Order{}, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	query = psql.Select("sku", "count").
@@ -288,14 +316,14 @@ func (r *Repository) GetOrderDetails(ctx context.Context, orderID int64) (domain
 
 	rawSQL, args, err = query.ToSql()
 	if err != nil {
-		return domain.Order{}, fmt.Errorf("build query for ReservePtoduct get: %s", err)
+		return domain.Order{}, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var itemsSchema []schema.ItemOrder
 	err = pgxscan.Select(ctx, db, &itemsSchema, rawSQL, args...)
 
 	if err != nil {
-		return domain.Order{}, fmt.Errorf("exec for ReservePtoduct get: %w", err)
+		return domain.Order{}, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var items []domain.ItemOrder
@@ -321,6 +349,9 @@ func (r *Repository) GetOrderDetails(ctx context.Context, orderID int64) (domain
 }
 
 func (r *Repository) GetOrderStatus(ctx context.Context, orderID int64) (domain.OrderStatus, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/GetOrderStatus")
+	defer span.Finish()
+
 	db := r.provider.GetDB(ctx)
 
 	query := psql.Select("Status").
@@ -329,14 +360,14 @@ func (r *Repository) GetOrderStatus(ctx context.Context, orderID int64) (domain.
 
 	rawSQL, args, err := query.ToSql()
 	if err != nil {
-		return "", fmt.Errorf("build query for ReservePtoduct get: %s", err)
+		return "", tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var status []domain.OrderStatus
 	err = pgxscan.Select(ctx, db, &status, rawSQL, args...)
 
 	if err != nil {
-		return "", fmt.Errorf("exec for ReservePtoduct get: %w", err)
+		return "", tracer.MarkSpanWithError(ctx, err)
 	}
 
 	var out domain.OrderStatus

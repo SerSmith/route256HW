@@ -3,23 +3,29 @@ package domain
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log"
+	"route256/libs/logger"
+	"route256/libs/tracer"
+
+	"github.com/opentracing/opentracing-go"
 )
+
+const ServiceName = "Checkout"
 
 var (
 	ErrStockInsufficient = errors.New("No such SKUs on stocks")
 )
 
 func (m *Model) AddToCart(ctx context.Context, user int64, sku uint32, count uint16) error {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "domain/add_ro_cart/get_product/AddToCart")
+	defer span.Finish()
 
 	stocks, err := m.LomsClient.Stocks(ctx, sku)
 
 	if err != nil {
-		return fmt.Errorf("get stocks: %w", err)
+		return tracer.MarkSpanWithError(ctx, err)
 	}
 
-	log.Printf("stocks: %v", stocks)
+	logger.Info("stocks: %v", stocks)
 
 	ok := false
 
@@ -36,8 +42,7 @@ func (m *Model) AddToCart(ctx context.Context, user int64, sku uint32, count uin
 		err = m.DB.AddToCartDB(ctx, user, sku, count)
 
 		if err != nil {
-			return fmt.Errorf("error in AddToCartDB: %w", err)
-
+			return tracer.MarkSpanWithError(ctx, err)
 		}
 
 	} else {

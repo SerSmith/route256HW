@@ -2,10 +2,12 @@ package domain
 
 import (
 	"context"
-	"fmt"
-	"log"
+	"route256/libs/logger"
+	"route256/libs/tracer"
 	"route256/libs/workerpool"
 	"sync"
+
+	"github.com/opentracing/opentracing-go"
 )
 
 const (
@@ -18,10 +20,14 @@ var (
 )
 
 func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, error) {
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "domain/list_cart/ListCart")
+	defer span.Finish()
+
 	OrderItems, err := m.DB.GetCartDB(ctx, user)
 
 	if err != nil {
-		return 0, nil, fmt.Errorf("err in GetCartDB: %v", err)
+		return 0, nil, tracer.MarkSpanWithError(ctx, err)
 	}
 
 	resChan := make(chan ItemCart, len(OrderItems))
@@ -33,26 +39,25 @@ func (m *Model) ListCart(ctx context.Context, user int64) (uint32, []ItemCart, e
 		wg.Add(1)
 		NowItem := item
 		err := wp.Run(ctx,
-							func (ctx context.Context){
-								defer wg.Done()
+			func(ctx context.Context) {
+				defer wg.Done()
 
-								product, err := m.productServiceClient.GetProduct(ctx, NowItem.SKU)
+				product, err := m.productServiceClient.GetProduct(ctx, NowItem.SKU)
 
-								if err != nil {
-									log.Print("err in runOmeGetProductInstance ", err)
-									product = &Product{
-										Name:	"Unknown",
-										Price:	0,
-									}
-								}
+				if err != nil {
+					logger.Info("err in runOmeGetProductInstance %w", err)
+					product = &Product{Name: GetProductUnknownName,
+						Price: GetProductUnknownPrice}
+				}
 
-								resChan <- ItemCart{
-									SKU:     NowItem.SKU,
-									Product: *product,
-									Count: NowItem.Count,
-								}})
-		if err != nil{
-			return 0, nil, fmt.Errorf("Error in workerpool ", err)
+				resChan <- ItemCart{
+					SKU:     NowItem.SKU,
+					Product: *product,
+					Count:   NowItem.Count,
+				}
+			})
+		if err != nil {
+			return 0, nil, tracer.MarkSpanWithError(ctx, err)
 		}
 
 	}

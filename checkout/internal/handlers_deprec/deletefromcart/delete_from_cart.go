@@ -3,8 +3,8 @@ package deletefromcart
 import (
 	"context"
 	"errors"
-	"log"
 	"route256/checkout/internal/domain"
+	"route256/libs/logger"
 )
 
 type Handler struct {
@@ -39,7 +39,7 @@ func (r Request) Validate() error {
 }
 
 func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
-	log.Printf("delete from cart, request: %+v", req)
+	logger.Info("delete from cart, request: %+v", req)
 
 	err := h.Model.DeleteFromCart(ctx, req.User, req.SKU, req.Count)
 

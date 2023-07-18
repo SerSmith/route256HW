@@ -2,8 +2,8 @@ package loms
 
 import (
 	"fmt"
-	"log"
 	"route256/checkout/pkg/loms/loms"
+	"route256/libs/logger"
 	"time"
 
 	"google.golang.org/grpc"
@@ -21,7 +21,7 @@ func New(clientUrl string) (*Client, error) {
 	fmt.Printf("TRY TO connect to %s", clientUrl)
 	conn, err := grpc.Dial(clientUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("failed to connect to server: %v", err)
+		logger.Fatalf("failed to connect to server: %v", err)
 	}
 
 	c := loms_v1.NewLomsClient(conn)

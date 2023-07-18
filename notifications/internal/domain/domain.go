@@ -4,6 +4,8 @@ import (
 	"context"
 )
 
+const ServiceName = "Notifications"
+
 type Messenger interface {
 	SendMessage(ctx context.Context, text string) error
 }

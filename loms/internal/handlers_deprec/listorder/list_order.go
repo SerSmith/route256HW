@@ -3,7 +3,7 @@ package listorder
 import (
 	"context"
 	"errors"
-	"log"
+	"route256/libs/logger"
 	"route256/loms/internal/domain"
 )
 
@@ -38,10 +38,10 @@ func (r Request) Validate() error {
 }
 
 func (h *Handler) Handle(ctx context.Context, req Request) (Response, error) {
-	log.Printf("list order, request: %+v", req)
+	logger.Info("list order, request: %+v", req)
 	order, err := h.Model.ListOrder(ctx, req.OrderID)
 	if err != nil {
-		log.Printf("list order: %s", err)
+		logger.Info("list order: %s", err)
 		return Response{}, err
 	}
 	items := make([]ItemOrder, 0, len(order.Items))
