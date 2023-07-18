@@ -381,6 +381,32 @@ func (r *Repository) GetOrderStatus(ctx context.Context, orderID int64) (domain.
 	return out, nil
 }
 
+func (r *Repository) GetOrderUser(ctx context.Context, orderID int64) (int64, error) {
+	span, ctx := opentracing.StartSpanFromContext(ctx, "repository/postgres/GetOrderUser")
+	defer span.Finish()
+
+	db := r.provider.GetDB(ctx)
+
+	query := psql.Select("user_id").
+		Distinct().
+		From(tableNameOrders).
+		Where(sq.Eq{"orderID": orderID})
+
+	rawSQL, args, err := query.ToSql()
+	if err != nil {
+		return 0, tracer.MarkSpanWithError(ctx, err)
+	}
+
+	var UserID []int64
+	err = pgxscan.Select(ctx, db, &UserID, rawSQL, args...)
+
+	if err != nil {
+		return 0, tracer.MarkSpanWithError(ctx, err)
+	}
+
+	return UserID[0], nil
+}
+
 func (r *Repository) RunRepeatableRead(ctx context.Context, fn func(ctxTx context.Context) error) error {
 	return r.provider.RunRepeatableRead(ctx, fn)
 }

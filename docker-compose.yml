@@ -137,6 +137,40 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+  postgres_notifications:
+    image: postgres:15.1
+    environment:
+      POSTGRES_DB: notifications
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+      PGPORT: 5434
+    volumes:
+      - .:/var/lib/postgresql/data/notifications
+    ports:
+      - 5434:5434
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d notifications"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 4G
+  redis:
+    image: "redis:alpine"
+    command: redis-server
+    ports:
+    - "6379:6379"
+    volumes:
+      - ./redis-data:/var/lib/redis
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    environment:
+    - REDIS_REPLICATION_MODE=master
     deploy:
       resources:
         limits:
@@ -171,6 +205,8 @@ services:
     image: notification
     build: ./notifications
     restart: unless-stopped
+    ports:
+      - "8089:8089"
     depends_on:
       - kafka1
       - kafka2

@@ -17,6 +17,11 @@ func (m *Model) ChangeOrderStatusWithNotification(ctx context.Context, orderID i
 		return tracer.MarkSpanWithError(ctx, err)
 	}
 
+	UserID, err := m.DB.GetOrderUser(ctx, orderID)
+	if err != nil {
+		return tracer.MarkSpanWithError(ctx, err)
+	}
+
 	err = m.DB.ChangeOrderStatus(ctx, orderID, newStatus)
 	if err != nil {
 		return tracer.MarkSpanWithError(ctx, err)
@@ -25,7 +30,8 @@ func (m *Model) ChangeOrderStatusWithNotification(ctx context.Context, orderID i
 	message := StatusChangeMessage{
 		OldStatus: string(nowStatus),
 		NewStatus: string(newStatus),
-		OrderID:   orderID}
+		OrderID:   orderID,
+		UserID:    UserID}
 
 	err = m.KP.SendMessage(message)
 	if err != nil {

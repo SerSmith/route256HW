@@ -3,7 +3,7 @@ package reciever
 import (
 	"context"
 	"route256/libs/logger"
-	"route256/notifications/internal/handler"
+	"route256/notifications/internal/handlers/grpc"
 	"route256/notifications/internal/infrastructure/kafka"
 	"sync"
 
@@ -14,10 +14,10 @@ type HandleFunc func(ctx context.Context, message *sarama.ConsumerMessage)
 
 type KafkaReceiver struct {
 	consumer *kafka.ConsumerGroup
-	handler  *handler.Handler
+	handler  *grpcHandler.Handler
 }
 
-func NewReceiver(handler *handler.Handler) *KafkaReceiver {
+func NewReceiver(handler *grpcHandler.Handler) *KafkaReceiver {
 
 	consumerGroup := kafka.NewConsumerGroup(handler.Notify)
 
